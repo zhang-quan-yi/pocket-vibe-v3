@@ -1,0 +1,87 @@
+[
+  {
+    "name": "02-paste",
+    "title": "F-02 / Paste URL / Validation",
+    "purpose": "Validate public GitHub repo URL before clone."
+  },
+  {
+    "name": "03-clone",
+    "title": "F-03 / Clone Progress",
+    "purpose": "Show clone task progress and recovery state."
+  },
+  {
+    "name": "04-reader",
+    "title": "F-05 / Reader Default",
+    "purpose": "Primary code reading canvas."
+  },
+  {
+    "name": "05-toolRail",
+    "title": "F-07 / Right Tool Rail",
+    "purpose": "Expose search, cards, and trail without permanent toolbar."
+  },
+  {
+    "name": "06-search",
+    "title": "F-08 / Search Sheet Results",
+    "purpose": "Project search with grouped results."
+  },
+  {
+    "name": "07-searchPreview",
+    "title": "F-09 / Search Preview",
+    "purpose": "Preview a search result before committing navigation."
+  },
+  {
+    "name": "08-reader-after-open",
+    "title": "F-05 / Reader Default",
+    "purpose": "Primary code reading canvas."
+  },
+  {
+    "name": "09-symbol",
+    "title": "F-10 / Symbol Action Menu",
+    "purpose": "Contextual semantic actions on a tapped symbol."
+  },
+  {
+    "name": "10-definition",
+    "title": "F-11 / Definition Peek",
+    "purpose": "Preview definition before jumping."
+  },
+  {
+    "name": "11-chat",
+    "title": "F-16 / Chat Half Sheet",
+    "purpose": "Ask AI with code context while keeping selected code visible."
+  },
+  {
+    "name": "12-token-limit",
+    "title": "F-17 / Chat Token Limit",
+    "purpose": "Prevent sending oversized context."
+  },
+  {
+    "name": "13-save-note",
+    "title": "F-18 / Save Note Tray",
+    "purpose": "Save AI answer as anchored note without leaving reader."
+  },
+  {
+    "name": "14-notes",
+    "title": "F-20 / Notes List",
+    "purpose": "Project knowledge entry point."
+  },
+  {
+    "name": "15-note-detail",
+    "title": "F-21 / Note Detail with Source",
+    "purpose": "Read note and jump back through source chip."
+  },
+  {
+    "name": "16-stale",
+    "title": "F-25 / Anchor Stale State",
+    "purpose": "A note remains readable when source cannot be restored."
+  },
+  {
+    "name": "17-offline",
+    "title": "F-23 / Offline State",
+    "purpose": "Show local reading still works when network is unavailable."
+  },
+  {
+    "name": "18-indexing",
+    "title": "F-24 / LSP Indexing State",
+    "purpose": "Semantic actions degraded until LSP is ready."
+  }
+]

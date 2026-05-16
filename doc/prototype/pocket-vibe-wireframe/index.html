@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pocket Vibe Wireframe Prototype</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="side-nav" aria-label="Prototype navigation">
+        <div class="brand-block">
+          <div class="brand-mark">PV</div>
+          <div>
+            <h1>Pocket Vibe</h1>
+            <p>MVP coded wireframe</p>
+          </div>
+        </div>
+
+        <nav class="mode-nav" aria-label="View mode">
+          <button class="mode-button active" data-mode="prototype">Prototype</button>
+          <button class="mode-button" data-mode="flow">Flow Map</button>
+          <button class="mode-button" data-mode="screens">Screens</button>
+          <button class="mode-button" data-mode="annotations">Annotations</button>
+          <button class="mode-button" data-mode="components">Components</button>
+        </nav>
+
+        <div class="nav-section">
+          <h2>Core Path</h2>
+          <div id="quickLinks" class="quick-links"></div>
+        </div>
+
+        <div class="nav-section small-note">
+          <h2>Rule</h2>
+          <p>Sheets and peeks preview first. Only explicit Open commits reader navigation.</p>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="workspace-header">
+          <div>
+            <p class="eyebrow">Local code prototype</p>
+            <h2 id="viewTitle">Prototype</h2>
+          </div>
+          <div class="header-actions">
+            <button id="resetFlow" class="ghost-button">Reset</button>
+            <button id="toggleScale" class="ghost-button">Compact</button>
+          </div>
+        </header>
+
+        <section id="prototypeView" class="view active">
+          <div class="prototype-layout">
+            <section class="phone-stage" aria-label="Interactive mobile prototype">
+              <div class="phone-frame">
+                <div class="phone-status"></div>
+                <div id="phoneScreen" class="phone-screen"></div>
+              </div>
+              <div class="screen-controls">
+                <button id="backButton" class="ghost-button">Back</button>
+                <button id="nextButton" class="primary-button">Next suggested</button>
+              </div>
+            </section>
+
+            <aside class="inspector" aria-label="Screen annotations">
+              <div class="inspector-card">
+                <p class="eyebrow">Current frame</p>
+                <h3 id="screenTitle"></h3>
+                <p id="screenPurpose"></p>
+              </div>
+              <div class="inspector-card">
+                <h3>Interactions</h3>
+                <ul id="screenInteractions"></ul>
+              </div>
+              <div class="inspector-card">
+                <h3>Review notes</h3>
+                <ul id="screenNotes"></ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="flowView" class="view">
+          <div class="canvas-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Clickable flow map</p>
+                <h3>Information architecture and jump paths</h3>
+              </div>
+              <p>Click any node to open that state in the interactive prototype.</p>
+            </div>
+            <div id="flowMap" class="flow-map"></div>
+          </div>
+        </section>
+
+        <section id="screensView" class="view">
+          <div class="canvas-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">All frames</p>
+                <h3>Figma-style screen wall</h3>
+              </div>
+              <p>Static screen thumbnails with full annotations available on click.</p>
+            </div>
+            <div id="screenWall" class="screen-wall"></div>
+          </div>
+        </section>
+
+        <section id="annotationsView" class="view">
+          <div class="canvas-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Design review</p>
+                <h3>Interaction annotations</h3>
+              </div>
+              <p>Use this page for product and engineering review.</p>
+            </div>
+            <div id="annotationList" class="annotation-grid"></div>
+          </div>
+        </section>
+
+        <section id="componentsView" class="view">
+          <div class="canvas-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Component states</p>
+                <h3>Reusable low/mid-fidelity pieces</h3>
+              </div>
+              <p>State coverage for the future Android and HarmonyOS shells.</p>
+            </div>
+            <div id="componentList" class="component-grid"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

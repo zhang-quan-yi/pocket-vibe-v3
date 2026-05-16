@@ -1,0 +1,30 @@
+# Pocket Vibe
+
+Pocket Vibe 是一款移动端 AI 源码阅读器，目标是在手机上完成真正可用的代码阅读、预览跳转、AI 解释和知识沉淀。
+
+## 当前文档入口
+
+- [MVP PRD](./POCKET_VIBE_MVP_PRD.md)
+- [移动端核心交互 UX 方案](./POCKET_VIBE_MOBILE_UX_SPEC.md)
+- [技术可行性与架构报告](./POCKET_VIBE_TECH_FEASIBILITY_ARCHITECTURE_REPORT.md)
+- [Code Map 竞品交互试用报告](./POCKET_VIBE_CODE_MAP_INTERACTION_REPORT.md)
+
+## 原型
+
+当前 coded wireframe 原型位于，已包含 Code Map 鸟瞰、模块放大和节点 lens 链路：
+
+```text
+prototype/pocket-vibe-wireframe/index.html
+```
+
+该原型无需构建，直接用浏览器打开即可。
+
+## 资料归档
+
+旧版 Figma brief、UX review、优化摘要和评审截图已归档到：
+
+```text
+archive/2026-05-15-ux-refresh/
+```
+
+归档资料仅作为历史参考，当前 UX 决策以 `POCKET_VIBE_MOBILE_UX_SPEC.md` 为准。
