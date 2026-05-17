@@ -1,0 +1,83 @@
+openapi: 3.1.0
+info:
+  title: Pocket Vibe Mock API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service status
+  /mock/repos:
+    get:
+      summary: List mock repos for the walking skeleton
+      responses:
+        "200":
+          description: Mock repo list
+  /reader/payload:
+    get:
+      summary: Get a mock reader payload
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: filePath
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reader payload
+  /search:
+    get:
+      summary: Search the mock file
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: query
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+  /context/resolve:
+    post:
+      summary: Resolve context chips before asking AI
+      responses:
+        "200":
+          description: Resolved context preview
+  /chat/sessions:
+    post:
+      summary: Create a chat session
+      responses:
+        "201":
+          description: Chat session
+  /chat/sessions/{sessionId}/events:
+    get:
+      summary: Stream a mock chat answer with tool events
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: question
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: SSE stream
+  /notes:
+    post:
+      summary: Save a mock note with source anchors
+      responses:
+        "201":
+          description: Saved note

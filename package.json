@@ -1,0 +1,15 @@
+{
+  "name": "pocket-vibe-v3",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "cd services/core && go run ./cmd/pocket-vibe-api",
+    "test:api": "cd services/core && go test ./...",
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "preview:web": "npm --workspace apps/web run preview"
+  }
+}

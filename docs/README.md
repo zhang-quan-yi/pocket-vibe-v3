@@ -16,6 +16,30 @@ Pocket Vibe 是一款移动端 AI 源码阅读器，目标是在手机上完成�
 - [项目管理计划](./POCKET_VIBE_PROJECT_MANAGEMENT_PLAN.md)
 - [Code Map 竞品交互试用报告](./POCKET_VIBE_CODE_MAP_INTERACTION_REPORT.md)
 
+## 当前工程入口
+
+工程开工最短链路已经落到仓库根目录：
+
+```text
+../apps/web
+../services/core
+```
+
+当前 mock walking skeleton：
+
+```text
+Open app
+  -> choose mock repo
+  -> open mock file
+  -> select code
+  -> add context
+  -> ask mock chat
+  -> save note
+  -> jump back to source
+```
+
+启动方式见仓库根目录 `README.md`。
+
 ## 原型
 
 当前 coded wireframe 原型位于，已包含 Code Map 鸟瞰、模块放大和节点 lens 链路：
