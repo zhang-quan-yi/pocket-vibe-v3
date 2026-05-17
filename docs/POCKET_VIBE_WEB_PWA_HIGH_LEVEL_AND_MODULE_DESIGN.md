@@ -324,12 +324,13 @@ Go / No-Go 门槛：
 |---|---|---|
 | 首发平台 | Web/PWA | 最快验证产品闭环 |
 | 前端 Reader | CodeMirror 6 read-only | 轻量、成熟、适合 Web reader |
-| 后端首发 | TypeScript service 优先评估 | schema 共享和 Agent PoC 成本低 |
+| 后端首发 | Go Core Service | 更适合 repo/index/worker/SSE/资源控制，同时用 contract-first 保持前后端一致 |
 | 搜索 | 后端 ripgrep | 成熟、快、避免浏览器承担大仓库搜索 |
 | 结构解析 | 后端 Tree-sitter | 后续可下沉到 `pocket-core` |
 | 语义 | semantic-lite + 按语言 LSP | 避免首发被完整 LSP 矩阵拖住 |
 | Chat streaming | SSE 优先 | 简单、易调试，后续可扩展 WebSocket |
 | Agent | benchmark + PoC 后决定 | 避免闭门自研弱版 runtime |
+| Contract | OpenAPI / JSON Schema | 支撑 TypeScript Web、Go 后端和未来 Kotlin/ArkTS DTO 复用 |
 | Android | 后端连接优先，本地 core 后置 | 先复用 Web MVP 验证过的能力 |
 | 国内环境 | non-GMS / self-host friendly | 避免基础设施不可用 |
 
@@ -369,7 +370,7 @@ MVP 不做：
 ## 15. 待决问题
 
 1. 前端框架和 store 方案。
-2. 后端首发语言和队列方案。
+2. Go 后端 router、队列和 DB 访问方案。
 3. DB / repo storage 选择。
 4. Tree-sitter 集成方式。
 5. Agent 首轮 benchmark 和 PoC 候选。
@@ -382,7 +383,7 @@ MVP 不做：
 
 1. API / DTO review：整理正式 shared schema 草案。
 2. Frontend state review：对齐 Reader、Context Basket、Chat、Note 状态。
-3. Backend API review：对齐 API group、task model、error model。
+3. Backend API review：对齐 Go service module、API group、task model、error model。
 4. Agent product benchmark：拆解 Cursor、Claude Code、Codex、Copilot Chat / Agent Mode、opencode。
 5. Agent ecosystem PoC：选 2-3 个框架验证工具权限、ToolCallLog、自定义读码工具、streaming、cancel 和 self-host。
 6. Android contract review：用同一份 schema 试生成 Kotlin data class 草案。

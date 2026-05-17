@@ -40,6 +40,14 @@ flowchart LR
   Queue --> AgentRuntime["Agent Runtime Adapter"]
 ```
 
+实现默认：
+
+- Web/PWA Client：TypeScript。
+- Backend Core API：Go-first。
+- API contract：OpenAPI / JSON Schema。
+- Chat / Agent event：SSE。
+- Android / HarmonyOS：后续复用同一 contract，不复用 Web 或 Go 的内部实现细节。
+
 ## 3. 前后端边界
 
 | 领域 | 前端权威 | 后端权威 |

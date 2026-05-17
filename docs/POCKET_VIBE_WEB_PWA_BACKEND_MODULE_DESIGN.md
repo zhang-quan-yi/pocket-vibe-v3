@@ -37,19 +37,25 @@ Public GitHub URL
 
 Web/PWA、后续 Android、后续 HarmonyOS 都应复用同一套 API contract 和 schema。后端 API 不允许暴露 CodeMirror、DOM、浏览器 URL hash、移动端 View 坐标等 UI 私有状态。
 
-### 2.3 Async by default
+### 2.3 Go-first backend implementation
+
+后端默认采用 Go Core Service。原因是 Pocket Vibe 后端的主要压力在 repo workspace、文件扫描、ripgrep / Tree-sitter / LSP worker 调度、SSE、任务取消、超时和资源配额，这些能力更贴近 Go 的优势。
+
+TypeScript 继续作为 Web/PWA 前端主栈。前后端共享不再依赖 TypeScript package，而是以 OpenAPI / JSON Schema / contract test 为边界；必要时生成 TypeScript、Go、Kotlin 或 ArkTS DTO。
+
+### 2.4 Async by default
 
 clone、index、search warmup、semantic indexing、anchor re-resolve、Agent 多步任务、daily report 生成都应按任务处理。短请求返回状态，长任务通过 polling、SSE 或 event stream 通知前端。
 
-### 2.4 Honest degradation
+### 2.5 Honest degradation
 
 LSP 未就绪、索引中、搜索超时、repo 太大、Anchor stale、模型不可用、token 超限，都必须以结构化 capability / error 返回。不能把 fallback 搜索包装成精准语义。
 
-### 2.5 Ecosystem first for Agent
+### 2.6 Ecosystem first for Agent
 
 Agent runtime 不闭门造车。后端要先设计 `Agent Runtime Adapter`，通过 PoC 评估 LangGraph、Mastra、OpenHands、Cline、Goose、Aider、Continue、AutoGen、opencode 等方案后再决定集成方式。
 
-### 2.6 China-friendly infrastructure
+### 2.7 China-friendly infrastructure
 
 后端部署和依赖要考虑中国大陆网络与模型生态：
 
@@ -106,43 +112,52 @@ flowchart TB
 这是模块边界建议，不代表现在要立即创建代码。
 
 ```text
-services/api/src/
-  app/
-    server/
-    routes/
-    middleware/
-    config/
-  modules/
-    workspace/
-    repo/
-    file/
-    reader-payload/
-    index/
-    search/
-    semantic/
-    anchor/
-    context-resolver/
-    agent/
-    model-gateway/
-    note/
-    daily-report/
-    capability/
-    task/
-    observability/
-    security/
-  shared/
-    schema/
-    errors/
-    result/
-    storage/
-    queue/
-    time/
-    id/
+services/core/
+  cmd/
+    pocket-vibe-api/
+      main.go
+    pocket-vibe-worker/
+      main.go
+  internal/
+    app/
+      server/
+      routes/
+      middleware/
+      config/
+    modules/
+      workspace/
+      repo/
+      file/
+      readerpayload/
+      index/
+      search/
+      semantic/
+      anchor/
+      contextresolver/
+      agent/
+      modelgateway/
+      note/
+      dailyreport/
+      capability/
+      task/
+      observability/
+      security/
+    shared/
+      contract/
+      errors/
+      result/
+      storage/
+      queue/
+      time/
+      id/
+  api/
+    openapi/
+    jsonschema/
 ```
 
 设计约束：
 
-- `shared/schema` 与前端共享语义，但不依赖前端框架。
+- `api/openapi` 与 `api/jsonschema` 是跨端契约来源，不依赖前端框架或 Go 内部类型。
 - `modules/*` 只能通过明确 service interface 调用，避免隐式跨模块读写数据库。
 - Worker 和 HTTP route 复用同一 service，不复制业务逻辑。
 - Agent 运行时集成放在 `agent/runtime-adapters/*`，避免框架私有状态污染核心模型。
@@ -1006,8 +1021,8 @@ type ApiError = {
 
 ### BE Slice 1：API Skeleton + Schema
 
-- HTTP server skeleton。
-- shared schema。
+- Go HTTP server skeleton。
+- OpenAPI / JSON Schema contract。
 - typed error model。
 - health check。
 - mock endpoints。
@@ -1147,15 +1162,15 @@ Agent 需要最小 eval：
 
 ## 15. 待决问题
 
-1. 后端首发语言：TypeScript service 是否足够，Agent PoC 是否需要 Python worker。
+1. Go 后端 HTTP router、模块边界和代码生成策略。
 2. DB 选择：PostgreSQL、SQLite、LibSQL 或其他。
-3. queue 选择：BullMQ、pg-boss、Temporal、轻量内置队列或其他。
+3. queue 选择：Postgres-backed queue、Redis/Asynq、Temporal、轻量内置 worker 或其他。
 4. repo storage：本地 filesystem、对象存储还是混合。
-5. Tree-sitter 集成方式：Node binding、Rust sidecar、WASM worker。
+5. Tree-sitter 集成方式：Go binding、Rust sidecar、WASM worker。
 6. token estimate 用 provider tokenizer 还是近似估算。
 7. Chat streaming 用 SSE 还是 WebSocket。
 8. model key 是用户自带、服务端托管测试 key，还是混合。
-9. Agent runtime 最终复用哪个框架或产品思路。
+9. Agent runtime 最终复用哪个框架或产品思路；是否需要 Python / TypeScript worker adapter。
 10. GitHub clone 是否需要服务端代理 / mirror 策略。
 
 ## 16. 参考资料

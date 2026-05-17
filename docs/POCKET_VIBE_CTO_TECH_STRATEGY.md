@@ -15,20 +15,22 @@ CTO 判断：
 - Android / HarmonyOS 负责后续原生体验、离线和本地能力。
 - Agent 能力必须参考生态，不闭门造车。
 - 后端 core service 是长期资产，不能变成一次性 demo。
-- shared schema 是未来多端复用的关键。
+- 后端主栈改为 Go-first，用它承接 repo、index、worker、SSE 和资源控制。
+- shared contract 是未来多端复用的关键，不能绑定某一种前端或后端语言。
 
 ## 2. 关键技术决策
 
 | 决策 | 建议 |
 |---|---|
 | 首发平台 | Web/PWA |
-| 后端 | TypeScript service 优先评估 |
+| 后端 | Go Core Service 优先 |
 | 前端 Reader | CodeMirror 6 read-only |
 | 搜索 | 后端 ripgrep |
 | 结构解析 | 后端 Tree-sitter |
 | 语义 | semantic-lite + 按语言 LSP |
 | Agent | benchmark + PoC 后决定 runtime |
 | Streaming | SSE 优先 |
+| Contract | OpenAPI / JSON Schema 优先 |
 | Android | Web 验证后再投入原生 |
 | 国内环境 | self-host / non-GMS friendly |
 
@@ -36,27 +38,29 @@ CTO 判断：
 
 首选：
 
-- TypeScript monorepo。
-- Web/PWA + CodeMirror 6。
-- Backend Core API。
-- shared schema package。
+- Web/PWA：TypeScript + CodeMirror 6。
+- Backend Core API：Go。
+- Contract：OpenAPI / JSON Schema，生成或校验 TypeScript / Go / Kotlin DTO。
 - relational DB。
 - task queue。
 - filesystem/object storage for repos。
 
-后端框架待评估：
+Go 后端组件建议：
 
-- Fastify：成熟、性能好、插件生态完整。
-- Hono：轻量、边缘友好。
-- Express：简单但长期类型和结构弱一些。
+- HTTP：优先 `net/http` + `chi` 或轻量 router，避免过早引入重框架。
+- API contract：OpenAPI-first，配合代码生成或 contract test 保持前后端一致。
+- DB：PostgreSQL 优先；早期本地 bootstrap 可用 SQLite。
+- DB access：先保持薄封装，后续按复杂度选择 `pgx` / `sqlc` / migration 工具。
+- Queue：先定义 queue adapter，可落到 Postgres/Redis/Temporal 等实现。
+- Repo / Search / Index：Go 调度 git、ripgrep、Tree-sitter、LSP worker，并做 timeout、quota、cancel。
 
 建议默认：
 
 ```text
-TypeScript + Fastify + Zod/OpenAPI + PostgreSQL or SQLite bootstrap + queue adapter
+TypeScript Web/PWA + Go Core API + OpenAPI/JSON Schema + PostgreSQL or SQLite bootstrap + queue adapter + SSE
 ```
 
-最终选择应在工程搭建前确认。
+除非 Go spike 证明成本明显高于收益，否则工程 skeleton 按 Go-first 启动。TypeScript 继续作为前端主栈，不再作为默认后端主栈。
 
 ## 4. Agent 策略
 
@@ -85,6 +89,7 @@ CTO 目标：
 
 - 复用成熟 runtime / workflow / tool trace。
 - 自研 Pocket Vibe 独有的 Anchor、Context Basket、Preview、Note、Mobile Reader。
+- Go 后端保持 Agent 权限、ToolCallLog、Context Resolver 的权威；必要时通过 adapter 调用 Python / TypeScript / 外部 agent worker。
 
 ## 5. 国内与 self-host 约束
 
@@ -176,7 +181,7 @@ MVP 不能无限制开放大仓库和长任务。
 
 - 产品/UX：负责读码闭环和验证。
 - 前端：Reader、Context Basket、Chat、Note。
-- 后端：repo、search、semantic、anchor、agent。
+- 后端：Go Core API、repo、search、semantic、anchor、agent、worker。
 - 架构/平台：schema、API、task、security。
 - Agent researcher：benchmark + PoC。
 
@@ -202,8 +207,8 @@ MVP 不能无限制开放大仓库和长任务。
 
 ## 12. CTO 第一周任务
 
-1. 确认技术栈默认选择。
-2. 确认 shared schema 工作方式。
+1. 确认 Go 后端 skeleton 方案。
+2. 确认 OpenAPI / JSON Schema contract 工作方式。
 3. 确认 Agent benchmark 候选。
 4. 确认 repo storage 和 clone sandbox 方案。
 5. 确认 API key 策略方向。

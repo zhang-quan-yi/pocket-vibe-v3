@@ -8,6 +8,7 @@
 ## 1. 项目启动假设
 
 - 当前阶段只做 Web/PWA MVP。
+- 前端主栈为 TypeScript；后端主栈为 Go Core Service。
 - 不写 Android 原生端。
 - 不支持私有仓库。
 - 不做 Agent 改源码、shell、commit、PR。
@@ -31,8 +32,8 @@
 范围：
 
 - Web app shell。
-- Backend API skeleton。
-- shared schema。
+- Go Backend API skeleton。
+- OpenAPI / JSON Schema contract。
 - mock reader payload。
 - mock search。
 - mock chat streaming。
@@ -65,7 +66,7 @@ Open app
 |---|---|---|
 | Product | PM / UX | 验收脚本、读码包、用户访谈 |
 | Frontend | FE | App shell、Reader、Context Basket、Chat |
-| Backend | BE | API skeleton、workspace、repo/file |
+| Backend | BE | Go API skeleton、workspace、repo/file |
 | Schema | Architect / FE / BE | shared DTO、OpenAPI / JSON Schema |
 | Agent | Agent researcher / BE | benchmark、PoC、ToolCallLog |
 | QA | All | demo checklist、fixtures、viewport checks |
@@ -75,7 +76,7 @@ Open app
 ### 第一周
 
 - 确认技术栈。
-- 建立 shared schema 草案。
+- 建立 OpenAPI / JSON Schema 草案。
 - 建立前后端 skeleton 计划。
 - 完成 Agent product benchmark。
 - 准备 fixture repos。
@@ -85,7 +86,7 @@ Open app
 
 - 完成 mock walking skeleton。
 - 前端 Reader/Context/Chat 基础交互。
-- 后端 API skeleton 和 mock endpoints。
+- Go 后端 API skeleton 和 mock endpoints。
 - 初版 ToolCallLog 结构。
 - README / 开发启动说明。
 
@@ -127,7 +128,7 @@ Open app
 
 ### Backend
 
-- 创建 API skeleton。
+- 创建 Go API skeleton。
 - 创建 workspace mock。
 - 创建 repo import mock。
 - 创建 file tree / content mock。
