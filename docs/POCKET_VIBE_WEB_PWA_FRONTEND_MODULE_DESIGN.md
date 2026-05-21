@@ -99,13 +99,13 @@ flowchart TB
   Router --> Settings["Settings"]
 
   ReaderWorkbench --> CodeReader["Code Reader Adapter"]
+  CodeReader --> CardsTrail["Cards / Trail"]
   ReaderWorkbench --> SearchPeek["Search / Preview"]
   ReaderWorkbench --> SymbolActions["Symbol Actions"]
   ReaderWorkbench --> DefinitionPeek["Definition / References Peek"]
   ReaderWorkbench --> ContextBasket["Context Basket"]
   ReaderWorkbench --> ChatSurface["Chat / Agent Surface"]
   ReaderWorkbench --> ToolRail["Tool Rail"]
-  ReaderWorkbench --> CardsTrail["Cards / Trail"]
 
   ChatSurface --> ContextBasket
   ChatSurface --> SaveAnswer["Save Answer Tray"]
@@ -132,16 +132,16 @@ apps/web/src/
     shell/
     providers/
   modules/
-    repo-intake/
-    project-home/
-    reader-workbench/
+    repo/
+    project/
+    workbench/
     code-reader/
-    search-preview/
+      cards-trail/
+    search/
     symbol-actions/
     context-basket/
-    chat-agent/
+    chat/
     knowledge/
-    cards-trail/
     settings/
   shared/
     api/
@@ -158,7 +158,7 @@ apps/web/src/
 
 - `modules/*` 之间通过 shared store / events / DTO 通信，避免直接互相拿内部组件状态。
 - `shared/schema` 只放平台无关类型，不引用 React、CodeMirror、DOM。
-- `code-reader` 可以适配 CodeMirror，但不能让 CodeMirror 类型泄漏到 `context-basket`、`knowledge`、`chat-agent`。
+- `code-reader` 可以适配 CodeMirror，但不能让 CodeMirror 类型泄漏到 `context-basket`、`knowledge`、`chat`。
 
 ## 6. 模块设计
 
