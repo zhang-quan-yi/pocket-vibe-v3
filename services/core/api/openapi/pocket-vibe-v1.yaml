@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Pocket Vibe Mock API
-  version: 0.1.0
+  version: 0.2.0
 servers:
   - url: http://localhost:8080
 paths:
@@ -13,13 +13,39 @@ paths:
           description: Service status
   /mock/repos:
     get:
-      summary: List mock repos for the walking skeleton
+      summary: List local fixture repos for the walking skeleton
       responses:
         "200":
           description: Mock repo list
+  /files/tree:
+    get:
+      summary: List the local fixture file tree for a project
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File tree
+  /files/content:
+    get:
+      summary: Read a local fixture file
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+        - name: filePath
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File content
   /reader/payload:
     get:
-      summary: Get a mock reader payload
+      summary: Build a reader payload from the fixture repo
       parameters:
         - name: projectId
           in: query
@@ -34,7 +60,7 @@ paths:
           description: Reader payload
   /search:
     get:
-      summary: Search the mock file
+      summary: Search fixture repo files
       parameters:
         - name: projectId
           in: query
@@ -47,6 +73,17 @@ paths:
       responses:
         "200":
           description: Search results
+  /capabilities:
+    get:
+      summary: Report baseline project capabilities
+      parameters:
+        - name: projectId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Capability status
   /context/resolve:
     post:
       summary: Resolve context chips before asking AI
@@ -76,8 +113,47 @@ paths:
         "200":
           description: SSE stream
   /notes:
+    get:
+      summary: List notes for a project
+      responses:
+        "200":
+          description: Note list
     post:
-      summary: Save a mock note with source anchors
+      summary: Save a note with source anchors
       responses:
         "201":
           description: Saved note
+  /notes/{noteId}:
+    get:
+      summary: Read one note
+      parameters:
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Note detail
+  /saved-answers:
+    get:
+      summary: List saved answers for a project
+      responses:
+        "200":
+          description: Saved answer list
+    post:
+      summary: Save an AI answer snapshot
+      responses:
+        "201":
+          description: Saved answer
+  /annotations:
+    get:
+      summary: List annotations for a project
+      responses:
+        "200":
+          description: Annotation list
+    post:
+      summary: Save an annotation
+      responses:
+        "201":
+          description: Annotation

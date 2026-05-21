@@ -1,82 +1,69 @@
-// Package search 负责代码仓库的全文本搜索，包括搜索结果片段、预览和 ContextChip 转换。
-// 搜索不能阻塞代码阅读器，查询必须有超时保护。
-// 后端拥有搜索的执行逻辑（未来集成 ripgrep），前端只消费搜索结果。
 package search
 
 import (
 	"context"
 	"strings"
 
+	filemod "pocket-vibe-v3/services/core/internal/modules/file"
 	"pocket-vibe-v3/services/core/internal/shared/contract"
+	"pocket-vibe-v3/services/core/internal/shared/fixture"
 )
 
-// SearchService 定义搜索模块对外暴露的能力。
-// 后端拥有搜索的执行逻辑（未来集成 ripgrep），前端只消费搜索结果。
 type SearchService interface {
-	// Search 在指定仓库内执行全文本搜索，返回匹配结果列表。
-	// 结果包含文件路径、行号、预览文本和源码范围。
-	// 查询为空时使用默认关键词。
 	Search(ctx context.Context, projectID string, query string) (*contract.SearchResponse, error)
 }
 
-// MockSearchService 是 SearchService 的 mock 实现，服务于 walking skeleton 验证阶段。
-// 在硬编码的 mock 源码行中执行简单的字符串匹配搜索。
-type MockSearchService struct{}
-
-// mockSearchLines 是搜索 mock 使用的源码行数据。
-var mockSearchLines = []string{
-	"import type { ContextChip, SourceRange } from './types';",
-	"",
-	"export function buildContextBasket(selection: SourceRange): ContextChip[] {",
-	"  const baseChip: ContextChip = {",
-	"    id: `selection:${selection.filePath}:${selection.startLine}` ,",
-	"    kind: 'selection',",
-	"    label: `Lines ${selection.startLine}-${selection.endLine}` ,",
-	"    source: selection,",
-	"  };",
-	"",
-	"  return [baseChip, createReaderTrailChip(selection.filePath)];",
-	"}",
-	"",
-	"function createReaderTrailChip(filePath: string): ContextChip {",
-	"  return {",
-	"    id: `trail:${filePath}` ,",
-	"    kind: 'readingTrail',",
-	"    label: 'Current reading trail',",
-	"    source: { filePath, startLine: 1, endLine: 1 },",
-	"  };",
-	"}",
+type FixtureSearchService struct {
+	Files filemod.Service
 }
 
-// mockSearchFile 是搜索 mock 使用的文件路径。
-const mockSearchFile = "src/reader/context.ts"
-
-// Search 在 mock 源码行中执行简单的字符串匹配搜索。
-func (s *MockSearchService) Search(ctx context.Context, projectID string, query string) (*contract.SearchResponse, error) {
+func (s *FixtureSearchService) Search(ctx context.Context, projectID string, query string) (*contract.SearchResponse, error) {
+	if strings.TrimSpace(projectID) == "" {
+		projectID = fixture.DefaultProject().Repo.ID
+	}
 	q := strings.TrimSpace(strings.ToLower(query))
 	if q == "" {
 		q = "context"
 	}
 
+	tree, err := s.Files.ListTree(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
 	results := make([]contract.SearchResult, 0)
-	for i, line := range mockSearchLines {
-		if strings.Contains(strings.ToLower(line), q) {
-			lineNo := i + 1
-			results = append(results, contract.SearchResult{
-				FilePath: mockSearchFile,
-				Line:     lineNo,
-				Preview:  strings.TrimSpace(line),
-				Range: contract.SourceRange{
-					FilePath:  mockSearchFile,
-					StartLine: lineNo,
-					EndLine:   lineNo,
-				},
-			})
+	for _, path := range flattenFiles(tree) {
+		content, err := s.Files.GetContent(ctx, projectID, path)
+		if err != nil {
+			return nil, err
+		}
+		for _, line := range content.Lines {
+			if strings.Contains(strings.ToLower(line.Text), q) {
+				results = append(results, contract.SearchResult{
+					FilePath: content.FilePath,
+					Line:     line.Number,
+					Preview:  strings.TrimSpace(line.Text),
+					Range: contract.SourceRange{
+						FilePath:  content.FilePath,
+						StartLine: line.Number,
+						EndLine:   line.Number,
+					},
+				})
+			}
 		}
 	}
 
-	return &contract.SearchResponse{
-		Query:   q,
-		Results: results,
-	}, nil
+	return &contract.SearchResponse{Query: q, Results: results}, nil
+}
+
+func flattenFiles(nodes []contract.FileNode) []string {
+	result := make([]string, 0)
+	for _, node := range nodes {
+		if node.Kind == "file" {
+			result = append(result, node.Path)
+			continue
+		}
+		result = append(result, flattenFiles(node.Children)...)
+	}
+	return result
 }
