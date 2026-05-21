@@ -46,5 +46,5 @@ func New() http.Handler {
 	mux.HandleFunc("/saved-answers", h.handleSavedAnswers)
 	mux.HandleFunc("/annotations", h.handleAnnotations)
 
-	return withCORS(withRequestLog(withTraceID(mux)))
+	return withCORS(withTraceID(withRequestLog(mux)))
 }

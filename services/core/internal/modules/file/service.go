@@ -120,6 +120,25 @@ func resolveProjectPath(root string, filePath string) (string, string, error) {
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", "", serviceerrors.ErrInvalidFilePath
 	}
+
+	evaluatedRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve root symlink: %w", err)
+	}
+
+	evaluatedResolved, err := filepath.EvalSymlinks(resolved)
+	if err == nil {
+		evaluatedRel, relErr := filepath.Rel(evaluatedRoot, evaluatedResolved)
+		if relErr != nil {
+			return "", "", fmt.Errorf("resolve evaluated path: %w", relErr)
+		}
+		if evaluatedRel == ".." || strings.HasPrefix(evaluatedRel, ".."+string(filepath.Separator)) {
+			return "", "", serviceerrors.ErrInvalidFilePath
+		}
+	} else if !os.IsNotExist(err) {
+		return "", "", fmt.Errorf("resolve file symlink: %w", err)
+	}
+
 	return resolved, filepath.ToSlash(rel), nil
 }
 

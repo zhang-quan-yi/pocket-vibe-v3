@@ -76,7 +76,7 @@ func TestNotesLoopAndTraceIDError(t *testing.T) {
 		t.Fatalf("list notes status = %d", resp.StatusCode)
 	}
 
-	resp, err = http.Get(ts.URL + "/notes/missing?projectId=mock-pocket-vibe")
+	resp, err = http.Get(ts.URL + "/notes/note_missing?projectId=mock-pocket-vibe")
 	if err != nil {
 		t.Fatalf("missing note request failed: %v", err)
 	}

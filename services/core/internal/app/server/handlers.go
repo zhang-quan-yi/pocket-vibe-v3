@@ -209,8 +209,12 @@ func (h *Handlers) handleNotes(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) handleNoteSubroutes(w http.ResponseWriter, r *http.Request) {
 	noteID := strings.TrimPrefix(r.URL.Path, "/notes/")
-	if noteID == "" || strings.Contains(noteID, "/") || !noteIDPattern.MatchString(noteID) {
+	if noteID == "" || strings.Contains(noteID, "/") {
 		writeRequestError(w, r, http.StatusNotFound, contract.ErrNotFound, "Unknown note route.")
+		return
+	}
+	if !noteIDPattern.MatchString(noteID) {
+		writeRequestError(w, r, http.StatusBadRequest, contract.ErrBadRequest, "Invalid note ID.")
 		return
 	}
 	note, err := h.Knowledge.GetNoteDocument(r.Context(), r.URL.Query().Get("projectId"), noteID)

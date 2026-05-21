@@ -13,6 +13,8 @@ type ApiError struct {
 const (
 	// ErrBadJSON 表示请求体 JSON 解析失败。
 	ErrBadJSON = "BAD_JSON"
+	// ErrBadRequest 表示请求参数格式不正确。
+	ErrBadRequest = "BAD_REQUEST"
 	// ErrNotFound 表示请求的资源或路由不存在。
 	ErrNotFound = "NOT_FOUND"
 	// ErrRepoInvalidURL 表示仓库 URL 格式不支持。
