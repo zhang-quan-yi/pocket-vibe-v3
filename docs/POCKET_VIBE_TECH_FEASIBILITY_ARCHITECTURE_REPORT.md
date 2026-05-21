@@ -7,11 +7,11 @@
 
 ## 1. 结论摘要
 
-Pocket Vibe 第一版建议调整为 **Web/PWA 优先验证**，先用最短路径证明“读源码 -> Ask AI -> Save Note”闭环是否成立；Android 和 HarmonyOS NEXT / 原生鸿蒙后续再做原生化。它不是一个常规网页工具问题，而是一个“Web 代码阅读器 + 服务端索引系统 + 受控 LSP/语义服务 + AI Chat/Agent 编排层”的问题。即使首发 Web/PWA，MVP 从第一版起仍必须采用 **前端 shell + 后端 core service + 可迁移 schema/DTO** 的架构边界。
+Pocket Vibe 第一版建议调整为 **Web/PWA 优先验证**，先用最短路径证明“读源码 -> Ask AI -> Save Answer -> Jump back”闭环是否成立；Android 和 HarmonyOS NEXT / 原生鸿蒙后续再做原生化。它不是一个常规网页工具问题，而是一个“Web 代码阅读器 + 服务端索引系统 + 受控 LSP/语义服务 + AI Chat/Agent 编排层”的问题。即使首发 Web/PWA，MVP 从第一版起仍必须采用 **前端 shell + 后端 core service + 可迁移 schema/DTO** 的架构边界。
 
 推荐技术栈：
 
-**Web/PWA TypeScript App Shell + CodeMirror 6 Reader + 后端 repo/index/semantic/agent service。后续 Android 使用 Kotlin/Java 原生壳层，HarmonyOS NEXT / 原生鸿蒙使用 ArkTS/ArkUI 原生壳层，并复用 Web MVP 沉淀下来的 repo schema、ContextChip、ToolCall、Anchor、Note、ChatSession 和 Agent 协议。**
+**Web/PWA TypeScript App Shell + CodeMirror 6 Reader + 后端 repo/index/semantic/agent service。后续 Android 使用 Kotlin/Java 原生壳层，HarmonyOS NEXT / 原生鸿蒙使用 ArkTS/ArkUI 原生壳层，并复用 Web MVP 沉淀下来的 repo schema、ContextChip、ToolCall、Anchor、SourceReference、SavedAnswer、Annotation、NoteDocument、Notebook、ChatSession 和 Agent 协议。**
 
 具体建议：
 
@@ -30,13 +30,13 @@ Pocket Vibe 第一版建议调整为 **Web/PWA 优先验证**，先用最短路�
 3. Tree-sitter、ripgrep、LSP、CodeMirror 都应复用开源；自研重点是阅读流程、上下文篮子、Agent 工具权限、Anchor 和知识沉淀。
 4. Web 版应主动削减本地化承诺：不做完整离线、不做本地私有仓库索引、不在浏览器里跑重型 LSP。
 5. Chat/Agent 是 MVP 闭环的一部分，不只是 UI 浮层。它需要清晰的本地/服务端编排层、工具权限模型、上下文裁剪策略和隐私边界。
-6. 后续 Android / HarmonyOS NEXT 能否低成本落地，取决于 Web MVP 是否把 ContextChip、ToolCall、Anchor、Note、ChatSession、RepoIndex 等协议设计成平台无关。
+6. 后续 Android / HarmonyOS NEXT 能否低成本落地，取决于 Web MVP 是否把 ContextChip、ToolCall、Anchor、SourceReference、SavedAnswer、Annotation、NoteDocument、Notebook、ChatSession、RepoIndex 等协议设计成平台无关。
 
 从移动端架构负责人的角度，最需要提前拍死的红线是：
 
 - Web MVP 可以快，但不能把 CodeMirror state、DOM selection、URL hash 当成长期数据模型。
 - 所有代码位置必须用稳定 SourceRange / Anchor 表达，UI 的 visual row 只能是派生状态。
-- Reader、Chat、Note、Search、Definition 的共享状态必须进入平台无关 store，不允许散落在页面组件里。
+- Reader、Chat、Knowledge、Search、Definition 的共享状态必须进入平台无关 store，不允许散落在页面组件里。
 - Android/鸿蒙原生化不是 WebView 套壳，也不是重做业务逻辑；它应该只替换 shell、renderer、storage adapter 和部分 local core。
 - 一旦 Web 版验证通过，原生版的核心价值是离线、本地仓库、长时间阅读手感、系统级安全存储和低内存稳定性，不是再做一遍网页。
 
@@ -152,8 +152,8 @@ Web/PWA 首发要主动做取舍。目标不是复刻桌面 IDE，也不是提�
 | 定义/引用候选 | 后端 semantic-lite + 可选 LSP，前端半屏/侧边 preview | 不承诺所有语言桌面 IDE 级准确，结果要标明 confidence。 |
 | Chat 浮层 | 右侧面板/底部面板，支持流式回复、重试、取消 | 移动浏览器优先使用底部 sheet，桌面优先右侧 panel。 |
 | 上下文篮子 | 当前文件、当前函数、选区、搜索结果、引用结果变成 chip | 发送前展示 token 粗估，超限必须裁剪。 |
-| 只读 Agent 工具 | read file、search、get symbol、find references、find related files、create note draft | 禁止改源码、执行 shell、commit、push。 |
-| 笔记保存 | 保存 AI 回复为 Markdown note，绑定 anchor | 保存后不离开 reader。 |
+| 只读 Agent 工具 | read file、search、get symbol、find references、find related files、create study note draft | 禁止改源码、执行 shell、commit、push。 |
+| Save Answer | 保存 AI 回复快照、Context Basket chip 和 source reference，绑定 anchor | 保存后不离开 reader。 |
 | 阅读状态 | 最近仓库、最近文件、滚动位置、展开/折叠状态、Chat session | 服务端持久化 + 浏览器 IndexedDB 缓存。 |
 | PWA 安装体验 | manifest、service worker、App shell cache、离线提示页 | 只缓存壳和草稿，不承诺离线读完整仓库。 |
 
@@ -163,9 +163,10 @@ Web/PWA 首发要主动做取舍。目标不是复刻桌面 IDE，也不是提�
 |---|---|---|
 | 账号登录与同步 | 同步笔记、Chat 历史、配置 | P0 可以先本地/匿名 workspace 验证闭环。 |
 | 多模型 profile | OpenAI-compatible base URL、模型路由 | P0 先支持一个 OpenAI-compatible 配置即可。 |
-| Repo read pack | 官方推荐仓库、学习路线、示例 prompt | 有助于冷启动，但不应阻塞 reader/chat/note。 |
-| AI 整理版笔记 | 原文 + 整理版 | P0 先保存原始回答和用户编辑版。 |
-| 知识卡片 | 提炼长期知识资产 | 需要先验证 note 使用频率。 |
+| Repo read pack | 官方推荐仓库、学习路线、示例 prompt | 有助于冷启动，但不应阻塞 reader/chat/knowledge。 |
+| Daily Report | 本地学习统计摘要 | 先验证保存回答、批注和学习笔记的频率。 |
+| AI 整理版笔记 | 原文 + 整理版 | P0 先保存回答快照和用户编辑摘要。 |
+| 知识卡片 | 提炼长期知识资产 | 需要先验证 NoteDocument 使用频率。 |
 | 分享链接 | 分享仓库阅读位置或笔记 | 需要权限、隐私和 workspace 生命周期设计。 |
 | 轻量移动适配 | 手机浏览器上的底部 sheet、拇指热区、字号设置 | P0 要可用，P1 再打磨手感。 |
 
@@ -186,7 +187,7 @@ Web/PWA 首发要主动做取舍。目标不是复刻桌面 IDE，也不是提�
 1. 用户能在 1 分钟内从 GitHub URL 进入代码阅读页。
 2. 用户能在 4 次关键点击内完成 `Search/Jump -> Ask -> Save`。
 3. AI 回答必须带可回跳的代码引用或上下文 chip。
-4. 保存笔记后仍停留在 reader，不打断阅读。
+4. Save Answer 或 Annotate 后仍停留在 reader，不打断阅读。
 5. LSP/semantic 失败时仍能通过搜索、符号和 AI 解释继续读。
 6. 移动浏览器至少能完成核心链路，但不以原生级手感作为 P0 验收。
 
@@ -220,7 +221,7 @@ Android/鸿蒙后续必须复用：
 
 - `ContextChip` / `ToolCall` / `ModelProfile` / `ChatSession` schema。
 - Anchor URI 和 resolver 策略。
-- Note / DailyReport / KnowledgeCard 数据格式。
+- `Anchor` / `SourceReference` / `SavedAnswer` / `Annotation` / `NoteDocument` / `Notebook` 数据格式。
 - Reader API：file tree、open file、search、definition、references、symbol outline。
 - Agent 工具权限分级。
 
@@ -243,7 +244,7 @@ Android/鸿蒙后续必须复用：
 
 **原生版架构边界**
 
-- `ReaderState`、`ChatState`、`ContextBasket`、`NoteState` 必须是平台无关状态机。
+- `ReaderState`、`ChatState`、`ContextBasket`、`KnowledgeState` 必须是平台无关状态机。
 - 原生 renderer 只消费 `CodeDocument`、`VisualLineModel`、`HighlightChunk`、`FoldRange`、`SelectionRange`。
 - 原生 renderer 不负责解析语言、不负责决定 prompt、不负责写笔记业务逻辑。
 - Android / ArkUI 只实现 shell、renderer、storage adapter、permission adapter、background adapter。
@@ -752,7 +753,7 @@ CodeView
    - 半屏 Chat 不弹键盘时，reader 当前行必须可见或有明确上下文摘要。
    - 键盘弹出后，不承诺完整阅读代码，但必须保留当前文件、当前函数、上下文 chip。
    - Chat 全屏退出必须恢复进入前的文件、滚动位置、折叠状态和选区。
-   - 保存笔记不跳出 reader，只给轻反馈。
+   - Save Answer / Annotate 不跳出 reader，只给轻反馈。
 
 ### 5.5 RecyclerView 折中方案
 
@@ -769,12 +770,12 @@ CodeView
 
 ### 6.1 设计目标
 
-Anchor 要解决的问题：笔记、批注、Chat chip 能在源码变更后尽可能找回原位置，同时不修改源码文件。
+Anchor 要解决的问题：SavedAnswer、Annotation、NoteDocument 和 Chat chip 能在源码变更后尽可能找回原位置，同时不修改源码文件。
 
 原则：
 
 - Anchor 数据存在 sidecar SQLite/Room 数据库或 App 私有目录。
-- Markdown 笔记只引用 `anchorId`，不内嵌脆弱行号。
+- Markdown 正文只引用稳定 `anchorId`，不内嵌脆弱行号或 UI 坐标。
 - 定位必须有 confidence，不允许低置信度时静默跳错。
 - Git commit、blob hash、symbol、snippet hash、上下文 hash、原始行号共同参与恢复。
 
@@ -878,7 +879,7 @@ CREATE TABLE anchor_resolution_history (
 
 ### 6.3 Anchor 创建流程
 
-用户保存笔记或批注时：
+用户保存 AI 回答、批注或学习笔记 source reference 时：
 
 ```text
 1. 读取 repo HEAD commit。
@@ -999,13 +1000,91 @@ CREATE TABLE anchor_resolution_history (
 
 ### 6.6 Anchor URI
 
-Markdown 笔记中只存稳定引用：
+Markdown 正文中只存稳定引用：
 
 ```markdown
 [相关代码](pocketvibe://anchor/anc_01HX...)
 ```
 
-App 展示时解析 `anchorId`，调用 resolver。这样笔记正文不依赖脆弱路径和行号，也方便未来同步。
+App 展示时解析 `anchorId`，调用 resolver。这样 Markdown 正文不依赖脆弱路径、行号、DOM selection、URL hash 或 scroll pixel，也方便未来同步到独立笔记 App。
+
+### 6.7 知识沉淀 DTO
+
+P0 不把 `Note` 当成一个大而全对象。平台无关模型拆成五类：`Annotation` 是源码旁批，`SavedAnswer` 是 AI 回答快照，`NoteDocument` 是整理型 Markdown 文档，`Notebook` 是 repo 级容器，`SourceReference` 连接 Markdown/回答/批注与源码 anchor。
+
+```ts
+type SourceReference = {
+  sourceRefId: string;
+  anchorId: string;
+  label: string;
+  role: "primary" | "supporting" | "mentioned";
+  quote?: string;
+};
+
+type Annotation = {
+  annotationId: string;
+  projectId: string;
+  anchorId: string;
+  text: string;
+  status: "active" | "stale";
+  createdAt: string;
+  updatedAt: string;
+};
+
+type SavedAnswer = {
+  savedAnswerId: string;
+  projectId: string;
+  chatMessageId: string;
+  contextChipIds: string[];
+  sourceRefs: SourceReference[];
+  title: string;
+  answerMarkdown: string;
+  userSummary?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Notebook = {
+  notebookId: string;
+  projectId: string;
+  title: string;
+  kind: "repo" | "custom";
+  defaultNoteId?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type NoteDocument = {
+  noteId: string;
+  notebookId: string;
+  projectId: string;
+  title: string;
+  markdownBody: string;
+  sourceRefs: SourceReference[];
+  linkedAnnotationIds: string[];
+  linkedSavedAnswerIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+```
+
+这些 DTO 不允许混入 CodeMirror state、DOM range、URL hash、scroll pixel、前端路由状态或具体框架组件 id。UI 可以缓存这些派生状态，但导出、同步、原生化迁移只能依赖 DTO 和 sidecar anchor resolver。
+
+### 6.8 Markdown 存储策略
+
+Markdown 正文放用户可读内容：
+
+- 标题、摘要、我的理解、后续问题。
+- AI 回答摘录或整理版。
+- 可点击的 source link，例如 `[resolveModule](pocketvibe://anchor/anc_01HX...)`。
+
+结构化 metadata 放 sidecar / database：
+
+- anchor fingerprint、resolution history、confidence。
+- chatMessageId、contextChipIds、linkedAnnotationIds、linkedSavedAnswerIds。
+- 多个 SourceReference 的 role、label、quote。
+
+不要把所有 anchor 都硬塞进 frontmatter。原因是一个 NoteDocument 会引用多个源码位置、多个 AI 回答和多个批注，这些引用会持续增删、失效、重映射。frontmatter 适合文档级 metadata，不适合承载多处、可变、需要 resolver 历史的 source graph。
 
 ## 7. AI Chat 与 Agent 架构
 
@@ -1065,7 +1144,12 @@ Persistence
   - ContextChip
   - ToolCallLog
   - ModelConfig
-  - Note / Anchor
+  - Anchor
+  - SourceReference
+  - SavedAnswer
+  - Annotation
+  - Notebook
+  - NoteDocument
 ```
 
 `AgentCoordinator` 可以先由后端 TypeScript/Go/Rust 服务实现，但接口应平台无关。后续 Android/鸿蒙可以复用同一套协议、DTO、工具名和状态机。
@@ -1085,7 +1169,7 @@ data class ContextChip(
     val anchorId: String?,
     val tokenEstimate: Int,
     val pinned: Boolean,
-    val createdFrom: String // reader, search, definition, references, note
+    val createdFrom: String // reader, search, definition, references, knowledge
 )
 ```
 
@@ -1125,7 +1209,7 @@ MVP 工具默认分三档：
 | 权限档 | 工具 | 默认策略 |
 |---|---|---|
 | Safe read | 读当前文件、读选区、读 symbol、搜索、查定义、查引用 | 可自动调用，但要在消息中可追溯 |
-| App write | 保存 AI 回复为笔记、创建笔记草稿、添加代码批注、写 Chat 历史 | 用户点击保存或明确确认后执行 |
+| App write | Save Answer、Create Study Note、Add to Study Note、添加代码批注、写 Chat 历史 | 用户点击保存或明确确认后执行 |
 | Dangerous / out of scope | 改源码、执行 shell、安装依赖、commit、push、PR、运行测试 | MVP 禁止 |
 
 后续如果引入“写设计文档 / 优化 PRD / 生成文档”等 Agent 任务，也应默认写入 App 私有草稿区或用户指定的文档区，不直接改源码仓库。
@@ -1137,8 +1221,8 @@ Chat 浮层需要进入架构状态机，而不是单纯 UI 开关：
 - 半屏 Chat：保留当前代码上下文摘要，主 Reader 避让当前行。
 - 全屏 Chat：保留当前文件路径、当前函数、上下文 chip 摘要，退出后恢复进入前阅读位置。
 - 从 AI 回复引用跳转：默认复用已有文件卡片，写入阅读轨迹。
-- 保存 AI 回复：不离开 Reader，保存成功给 snackbar / gutter 标记 / note chip。
-- 失败重试：不得重复插入消息、重复扣上下文、重复创建笔记。
+- Save Answer：不离开 Reader，保存成功给 snackbar / gutter 标记 / source chip。
+- 失败重试：不得重复插入消息、重复扣上下文、重复创建 SavedAnswer / Annotation。
 
 Reader 与 Chat 的共享状态包括：
 
@@ -1244,13 +1328,14 @@ Web/PWA MVP 可以先实现第一版，但必须避免把这些规则写死在 R
 ### Phase 4：Web 知识沉淀闭环
 
 - Anchor DB。
-- 保存 AI 回答为 Markdown 笔记。
-- 代码批注。
-- 从笔记跳回代码。
+- SourceReference / SavedAnswer / Annotation / Notebook / NoteDocument DTO。
+- Save Answer：保存 AI 回答、Context Basket chip 和 source reference。
+- Annotate Code：代码旁批绑定 source anchor。
+- Create / Edit Study Note：整理型 Markdown NoteDocument。
+- 从保存回答、批注或学习笔记跳回代码。
 - Anchor resolver 与 confidence UI。
-- Daily report 的本地统计版。
 
-验收底线：保存笔记不打断阅读；anchor 失效时可解释；不修改源码文件。
+验收底线：Save Answer 和 Annotate 不打断阅读；anchor 失效时可解释；不修改源码文件；Daily Report / Knowledge Card 不作为 P0 前置依赖。
 
 ### Phase 5：Android / HarmonyOS 原生化准备
 
@@ -1275,7 +1360,7 @@ Web/PWA MVP 可以先实现第一版，但必须避免把这些规则写死在 R
 - ContextChip、ToolCall、ModelProfile、ChatSession、citation/anchor schema 不能只存在于 Web UI 层。
 - Agent 工具权限、token budget、上下文裁剪规则必须有可版本化的 DTO 或策略层。
 - 后端 API 不允许暴露 Web 前端组件私有状态，例如 CodeMirror 内部对象。
-- UI 可以平台重写，但 repo、file、symbol、search result、anchor、note、chat 等数据模型必须复用。
+- UI 可以平台重写，但 repo、file、symbol、search result、anchor、SavedAnswer、Annotation、NoteDocument、chat 等数据模型必须复用。
 - Web 数据库 schema 需要为后续 Android/HarmonyOS 迁移预留导出格式，不能只依赖浏览器 IndexedDB 私有形态。
 - 新增核心能力时，必须先判断它属于 Web shell、backend core service、platform adapter 还是未来 local core。
 
@@ -1308,7 +1393,7 @@ Web/PWA MVP 可以先实现第一版，但必须避免把这些规则写死在 R
 | 模型 API key 泄露或误同步 | 高 | 首发可优先走服务端托管模型配置；若支持自带 key，需加密存储、日志脱敏、不同步明文 |
 | Chat 历史包含源码片段的隐私风险 | 高 | P0 只支持公共仓库；同步前做隐私说明；企业/私有仓库后续单独策略 |
 | PWA 离线能力被误解 | 中 | UI 明确“仅缓存壳、草稿、最近状态”；完整离线放到原生版 |
-| Android/鸿蒙适配返工 | 中 | Web MVP API contract 先行；reader/chat/note/anchor schema 平台无关 |
+| Android/鸿蒙适配返工 | 中 | Web MVP API contract 先行；reader/chat/knowledge/anchor schema 平台无关 |
 | 原生 Reader 坐标系统返工 | 高 | 从 Web MVP 起区分 SourceRange、VisualRange、Anchor，禁止持久化 UI 私有坐标 |
 | 原生滚动和手势冲突 | 高 | 右边缘入口降级，选区/横向滚动/Chat sheet 分层命中测试，横屏承担重内容 |
 | 原生端过早本地化 LSP | 高 | 先复用后端语义服务；只有明确离线价值和语言优先级后再下沉 runtime |
@@ -1322,8 +1407,8 @@ Pocket Vibe 第一版应该把资源投入到五件事：
 1. **Web/PWA 阅读闭环**：CodeMirror 6 reader、文件树、搜索、函数结构和阅读状态，先证明用户真的会读。
 2. **后端 repo/index/semantic 服务**：GitHub public repo clone、Tree-sitter、ripgrep、semantic-lite 和按需 LSP，这是 Web 首发的能力底座。
 3. **AI Chat + 受控 Agent 编排层**：把当前文件、函数、选区、搜索结果变成可控上下文，让用户能 Ask。
-4. **Note / Anchor 知识沉淀**：让 AI 回复和用户理解可以保存、回跳、复习，这是 Save 闭环。
-5. **平台无关 schema / API contract**：`ContextChip`、`ToolCall`、`Anchor`、`Note`、`ChatSession` 必须为后续 Android/鸿蒙复用。
+4. **Anchored Knowledge 知识沉淀**：让 AI 回复、源码旁批和整理型学习笔记可以保存、回跳、复习，这是 Save 闭环。
+5. **平台无关 schema / API contract**：`ContextChip`、`ToolCall`、`Anchor`、`SourceReference`、`SavedAnswer`、`Annotation`、`NoteDocument`、`Notebook`、`ChatSession` 必须为后续 Android/鸿蒙复用。
 6. **原生化验收门槛**：Web 数据跑通前不急着重写原生；Web 数据跑通后，原生端必须围绕离线、本地仓库、系统安全存储和高质量 reader 手感提供明确增量价值。
 
 不要一开始追求“手机端完整桌面 IDE 语义能力”。更好的路线是：

@@ -12,12 +12,12 @@
 前端 MVP 的目标不是做一个桌面 IDE，也不是把所有能力堆进 Chat，而是在移动优先的代码阅读场景里跑通：
 
 ```text
-Open repo -> Read code -> Add context -> Ask / Agentic Reading -> Save note -> Jump back
+Open repo -> Read code -> Add context -> Ask / Agentic Reading -> Save Answer -> Jump back
 ```
 
 前端设计要解决：
 
-1. Reader、Search、Definition、Chat、Context Basket、Note 如何协作。
+1. Reader、Search、Definition、Chat、Context Basket、Knowledge Surface 如何协作。
 2. 哪些状态属于前端 UI，哪些必须映射到平台无关 DTO。
 3. 移动端小屏下如何表达项目上下文，不让用户困惑“AI 到底看到了什么”。
 4. 如何参考 VS Code Copilot Chat / `vscode-copilot-chat` 的上下文设计，但不照搬桌面 IDE 交互。
@@ -42,7 +42,7 @@ Pocket Vibe 要借鉴这些模式，但必须转译成移动源码阅读器：
 
 - 不默认开放编辑源码。
 - 不默认执行 terminal。
-- 以 Reader、Preview、Anchor、Note、DailyReport 为中心，而不是以 IDE 编辑器为中心。
+- 以 Reader、Preview、Anchor、SavedAnswer、Annotation、NoteDocument 为中心，而不是以 IDE 编辑器为中心。
 - 在发送前明确展示“将发送哪些上下文”。
 
 ### 2.2 其他产品级参考
@@ -61,7 +61,7 @@ Pocket Vibe 要借鉴这些模式，但必须转译成移动源码阅读器：
 
 ### 3.1 Reader first
 
-代码阅读区是主界面。Search、Chat、Context Basket、Notes 都围绕 Reader 工作，不应把 Reader 降级成背景。
+代码阅读区是主界面。Search、Chat、Context Basket、Save Answer、Annotation 和 NoteDocument 都围绕 Reader 工作，不应把 Reader 降级成背景。
 
 ### 3.2 Context visible
 
@@ -77,7 +77,7 @@ Search、Definition、References 都先 preview。只有 `Open` / `Jump` 才改�
 
 ### 3.5 Product state over UI state
 
-前端状态要尽量转换为平台无关模型：`SourceRange`、`Anchor`、`ContextChip`、`ChatSession`、`Note`、`ToolCallLog`。不能把 CodeMirror state、DOM range、scroll pixel 当成长期状态。
+前端状态要尽量转换为平台无关模型：`SourceRange`、`Anchor`、`SourceReference`、`ContextChip`、`ChatSession`、`SavedAnswer`、`Annotation`、`NoteDocument`、`ToolCallLog`。不能把 CodeMirror state、DOM range、scroll pixel 当成长期状态。
 
 ### 3.6 Permissioned Agent UI
 
@@ -95,7 +95,7 @@ flowchart TB
   Router --> RepoIntake["Repo Intake"]
   Router --> ProjectHome["Project Home"]
   Router --> ReaderWorkbench["Reader Workbench"]
-  Router --> NotesSurface["Notes Surface"]
+  Router --> KnowledgeSurface["Knowledge Surface"]
   Router --> Settings["Settings"]
 
   ReaderWorkbench --> CodeReader["Code Reader Adapter"]
@@ -108,14 +108,14 @@ flowchart TB
   ReaderWorkbench --> CardsTrail["Cards / Trail"]
 
   ChatSurface --> ContextBasket
-  ChatSurface --> SaveNote["Save Note Tray"]
-  SaveNote --> NotesSurface
+  ChatSurface --> SaveAnswer["Save Answer Tray"]
+  SaveAnswer --> KnowledgeSurface
 
   ClientStore --> WorkspaceStore["Workspace Store"]
   ClientStore --> ReaderStore["Reader Store"]
   ClientStore --> ContextStore["Context Store"]
   ClientStore --> ChatStore["Chat Store"]
-  ClientStore --> NoteStore["Note Store"]
+  ClientStore --> KnowledgeStore["Knowledge Store"]
   ClientStore --> CapabilityStore["Capability Store"]
 
   ApiClient --> Backend["Backend Core API"]
@@ -140,7 +140,7 @@ apps/web/src/
     symbol-actions/
     context-basket/
     chat-agent/
-    notes/
+    knowledge/
     cards-trail/
     settings/
   shared/
@@ -158,7 +158,7 @@ apps/web/src/
 
 - `modules/*` 之间通过 shared store / events / DTO 通信，避免直接互相拿内部组件状态。
 - `shared/schema` 只放平台无关类型，不引用 React、CodeMirror、DOM。
-- `code-reader` 可以适配 CodeMirror，但不能让 CodeMirror 类型泄漏到 `context-basket`、`notes`、`chat-agent`。
+- `code-reader` 可以适配 CodeMirror，但不能让 CodeMirror 类型泄漏到 `context-basket`、`knowledge`、`chat-agent`。
 
 ## 6. 模块设计
 
@@ -229,7 +229,7 @@ Workbench 的核心规则：
 
 - Search / Definition / References 默认是 peek，不改变主 Reader。
 - Chat 打开后仍保留当前代码上下文摘要。
-- Save Note 不离开 Reader。
+- Save Answer 和 Annotate 不离开 Reader。
 - 横竖屏切换后保留当前文件、滚动位置、选区、context chips、chat draft。
 
 概念状态：
@@ -259,7 +259,7 @@ type ReaderWorkbenchViewState = {
 
 - `ReaderPayload`。
 - 当前 fold state。
-- 当前 anchor / note bookmarks。
+- 当前 anchor / saved-answer / annotation bookmarks。
 - capability status。
 
 输出：
@@ -274,7 +274,7 @@ type ReaderWorkbenchViewState = {
 
 - 不保存业务状态。
 - 不直接调用 Agent。
-- 不把 CodeMirror object 暴露给 Chat、Note、Context Basket。
+- 不把 CodeMirror object 暴露给 Chat、Knowledge、Context Basket。
 
 ### 6.6 Search / Preview
 
@@ -353,7 +353,9 @@ Pocket Vibe 的转译：
 - `#references` -> References 结果集合 chip。
 - `#search` -> Search Preview / selected results chip。
 - `#trail` -> 最近阅读轨迹 chip。
-- `#note` -> 已保存笔记 chip。
+- `#saved-answer` -> 已保存 AI 回答 chip。
+- `#annotation` -> 代码旁批 chip。
+- `#study-note` -> 整理型学习笔记 chip。
 - `#map-node` -> Code Map 节点 chip。
 - `#codebase` -> 项目级检索模式，不直接塞整仓库。
 
@@ -361,15 +363,17 @@ Pocket Vibe 的转译：
 
 | 类型 | 来源 | 用途 |
 |---|---|---|
-| `selection` | Reader selection | 解释选中代码、生成笔记 |
+| `selection` | Reader selection | 解释选中代码、保存回答或添加批注 |
 | `file` | 当前文件 / file tree | 解释文件职责、总结文件 |
 | `symbol` | sticky symbol / token action | 解释函数、追调用链 |
 | `definition` | Definition Peek | 解释定义、比较候选 |
 | `references` | References Panel | 分析调用方式 |
 | `searchResult` | Search Preview | 解释命中片段 |
 | `trail` | Reading Trail | 让 Agent 知道用户刚读过什么 |
-| `note` | Notes Surface | 基于已有理解继续提问 |
-| `dailyReport` | Daily report | 回顾今日阅读 |
+| `savedAnswer` | Knowledge Surface | 基于已保存 AI 回答继续提问 |
+| `annotation` | Knowledge Surface / gutter bookmark | 基于源码旁批继续提问 |
+| `noteDocument` | Knowledge Surface | 基于整理型学习笔记继续提问 |
+| `dailyReport` | Daily Report | P1 回顾今日阅读 |
 | `mapNode` | Code Map | 从模块视角提问 |
 | `codebaseQuery` | 项目检索 | 让 Agent 先查再答 |
 
@@ -423,7 +427,7 @@ Add Context 入口：
 - Search result。
 - Definition result。
 - Recent trail。
-- Note。
+- SavedAnswer / Annotation / NoteDocument。
 - Project search。
 
 移动端限制：
@@ -446,7 +450,7 @@ flowchart LR
 
 步骤：
 
-1. collect：从 Reader、Search、Definition、Notes、Trail 收集 context candidates。
+1. collect：从 Reader、Search、Definition、Knowledge、Trail 收集 context candidates。
 2. normalize：统一成 `ContextChip`。
 3. resolve：把 chip 解析成最新 `SourceRange` / `Anchor`。
 4. estimate：估算 token 和成本。
@@ -480,7 +484,7 @@ Pocket Vibe 可借鉴 `@workspace` / `@terminal` / `@vscode` 的思想，但参�
 |---|---|---|
 | `@reader` | 当前文件、选区、symbol、fold、trail | P0 |
 | `@codebase` | 项目搜索、相关文件、调用链候选 | P0/P1 |
-| `@notes` | 笔记、日报、已保存理解 | P0 |
+| `@knowledge` | SavedAnswer、Annotation、NoteDocument、已保存理解 | P0 |
 | `@agent` | 多步读码任务、计划和总结 | P0/P1 |
 | `@settings` | 模型、token、隐私、同步设置 | P1 |
 
@@ -496,7 +500,8 @@ Pocket Vibe 可借鉴 `@workspace` / `@terminal` / `@vscode` 的思想，但参�
 | Next file | `suggest_next_files` |
 | Call chain | `trace_call_chain` |
 | Summarize file | `summarize_file` |
-| Save note | `create_note_draft` |
+| Save Answer | `save_answer` |
+| Create Study Note | `create_study_note_draft` |
 | Daily report | `create_daily_report_draft` |
 | Find candidates | `recover_stale_anchor` |
 
@@ -510,7 +515,7 @@ Pocket Vibe 可借鉴 `@workspace` / `@terminal` / `@vscode` 的思想，但参�
 - 展示 Context Basket。
 - 展示快捷动作。
 - 展示 Agent plan / tool calls / streaming response。
-- 保存回答为 note。
+- 保存回答为 SavedAnswer。
 - 支持 cancel / retry / continue。
 
 模式：
@@ -520,7 +525,7 @@ Pocket Vibe 可借鉴 `@workspace` / `@terminal` / `@vscode` 的思想，但参�
 | Ask | 单轮或短上下文问答 |
 | Plan | 生成阅读计划，不立即执行多步工具 |
 | Agentic Reading | 多步读码调查，工具调用可见 |
-| Note Draft | 整理为 Markdown 草稿 |
+| Study Note Draft | 整理为 Markdown 草稿 |
 
 Agent 运行态：
 
@@ -540,15 +545,17 @@ ToolCall 展示：
 - 可展开查看摘要和引用。
 - 失败时可 retry 或跳过。
 
-### 6.11 Save Note Tray
+### 6.11 Save Answer / Annotation / Study Note
 
 职责：
 
-- 保存 AI response 或用户整理内容。
+- `Save Answer`：保存 AI response、Context Basket chip 和 source reference。
+- `Annotate`：保存当前行、函数或选区上的短批注。
+- `Create Study Note` / `Add to Study Note`：创建或追加整理型 Markdown 文档。
 - 标题编辑。
 - Source chips。
 - Markdown preview。
-- Later / Save。
+- Later / Save Answer / Save Annotation。
 
 规则：
 
@@ -557,17 +564,18 @@ ToolCall 展示：
 - snackbar 提供 View / Undo。
 - gutter bookmark 更新。
 
-### 6.12 Notes Surface
+### 6.12 Knowledge Surface
 
 职责：
 
-- Note list。
-- Note detail。
+- SavedAnswer list/detail。
+- Annotation list/detail。
+- NoteDocument list/detail。
 - Source chip 回跳。
 - stale anchor 候选。
-- Daily report。
+- Daily Report 作为 P1。
 
-Note 可以作为 Context Basket 来源。
+SavedAnswer、Annotation、NoteDocument 可以作为 Context Basket 来源。
 
 ### 6.13 Cards / Trail
 
@@ -586,7 +594,7 @@ Note 可以作为 Context Basket 来源。
 - Search。
 - Cards。
 - Trail。
-- Notes。
+- Knowledge。
 - Context。
 
 按钮至少 44px，有可访问名称。
@@ -614,7 +622,7 @@ Store 切片：
 | `readerStore` | current file、selection、symbol、scroll restoration、panel |
 | `contextStore` | context chips、suggested chips、token estimate |
 | `chatStore` | session、messages、agent run、tool calls、draft |
-| `noteStore` | note draft、save status、bookmarks |
+| `knowledgeStore` | SavedAnswer、Annotation、NoteDocument draft、save status、bookmarks |
 | `trailStore` | reading trail、file cards |
 | `capabilityStore` | indexing、semantic、offline、model provider |
 | `settingsStore` | theme、font size、wrap、model profile |
@@ -623,7 +631,7 @@ Store 切片：
 
 - UI 展开高度不入后端。
 - `SourceRange` / `Anchor` 入后端或本地持久化。
-- chat draft 和 note draft 可本地缓存。
+- chat draft 和 NoteDocument draft 可本地缓存。
 
 ### 6.17 API / Streaming Client
 
@@ -667,7 +675,7 @@ sequenceDiagram
   participant D as Definition Peek
   participant B as Context Basket
   participant C as Chat
-  participant N as Save Note
+  participant N as Save Answer
 
   U->>R: Tap symbol
   R->>D: Show definition candidates
@@ -675,7 +683,7 @@ sequenceDiagram
   D->>B: Add definition chip
   B->>C: Open Chat
   C-->>U: Stream explanation
-  U->>N: Save note
+  U->>N: Save Answer
   N-->>R: Show gutter bookmark
 ```
 
@@ -754,7 +762,7 @@ Requirements:
 
 - Selection -> Context -> Chat。
 - Search -> Preview -> Explain / Open。
-- Definition -> Explain -> Save Note。
+- Definition -> Explain -> Save Answer。
 - Stale anchor -> candidates。
 - Offline -> Chat send disabled。
 
@@ -772,7 +780,7 @@ Screenshots should verify:
 
 - Reader visible area。
 - Context Basket not overlapping input。
-- Send / Save reachable。
+- Send / Save Answer reachable。
 - Long chips do not break layout。
 
 ## 11. 前端 MVP 切片
@@ -794,7 +802,7 @@ Screenshots should verify:
 
 验收：
 
-- 不接真实后端也能演示 `Read -> Add Context -> Ask -> Save`。
+- 不接真实后端也能演示 `Read -> Add Context -> Ask -> Save Answer`。
 
 ### FE Slice 2：Reader Workbench
 
@@ -824,14 +832,14 @@ Screenshots should verify:
 - Ask / Plan / Agentic Reading modes。
 - ToolCallLog display。
 - streaming / cancel / retry。
-- Save Note Tray。
+- Save Answer Tray。
 
-### FE Slice 6：Notes / Trail / Daily Report
+### FE Slice 6：Knowledge / Trail
 
-- Note list/detail。
+- SavedAnswer / Annotation / NoteDocument list/detail。
 - Source chip jump。
 - stale anchor UI。
-- Reading trail and daily report draft。
+- Reading trail；Daily Report draft 作为 P1。
 
 ## 12. 不做事项
 
@@ -851,10 +859,10 @@ Screenshots should verify:
 1. Context Basket 是否能清楚表达 AI 将看到什么。
 2. 隐式上下文是否都可见。
 3. `#codebase` 是否被设计为检索 intent，而不是整仓库塞 prompt。
-4. CodeMirror 类型是否不会泄漏到 schema / context / note。
+4. CodeMirror 类型是否不会泄漏到 schema / context / knowledge。
 5. Chat 是否区分 Ask、Plan、Agentic Reading。
 6. App write 是否需要用户确认。
-7. Save Note 是否不打断 Reader。
+7. Save Answer / Annotate 是否不打断 Reader。
 8. 横竖屏和小屏键盘态是否有明确布局。
 9. VS Code Copilot Chat 的上下文模型是否已经被转译，而不是照搬。
 10. Android native renderer 是否能复用 Reader payload 和 ContextChip。
@@ -868,7 +876,7 @@ Screenshots should verify:
 5. 是否需要桌面 Web 的 keyboard shortcut。
 6. Context chip 是否支持用户自定义命名。
 7. Code Map 节点如何进入 Context Basket。
-8. Note / DailyReport 是否支持前端离线编辑。
+8. NoteDocument / DailyReport 是否支持前端离线编辑。
 
 ## 15. 参考资料
 

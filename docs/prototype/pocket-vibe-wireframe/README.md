@@ -37,9 +37,9 @@ No build step is required.
 - File cards and reading trail
 - Code selection toolbar
 - Chat half sheet and token limit state
-- Save note tray and saved feedback without leaving Reader
+- Save Answer tray and saved feedback without leaving Reader
 - Code annotation
-- Notes list, note detail and daily report
+- Knowledge list, saved answer/detail and daily report preview
 - Offline, LSP indexing and stale anchor states
 - Landscape reader plus fully visible right panel
 - Map-to-reader path: Overview -> Resolver module -> resolveModule lens -> Reader
@@ -50,5 +50,5 @@ No build step is required.
 - Map can orient: use Code Map as the repo bird's-eye entry before detailed reading.
 - Preview before jump: search and LSP use sheet/peek first.
 - Honest degradation: indexing and stale anchor states must not fake accuracy.
-- Jump / Ask / Save: token or search -> preview -> explain -> save -> stay near source.
+- Jump / Ask / Save Answer: token or search -> preview -> explain -> save -> stay near source.
 - Reusable IA: Android and HarmonyOS NEXT shells should preserve the same core flow.

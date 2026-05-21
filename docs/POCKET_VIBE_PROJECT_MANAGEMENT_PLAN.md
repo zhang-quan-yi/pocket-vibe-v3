@@ -23,8 +23,8 @@
 | M1 Mock Skeleton | mock 跑通 Read -> Ask -> Save | 浏览器 demo 可演示 |
 | M2 Real Repo Reader | 公共 repo 导入并打开文件 | URL -> Reader |
 | M3 Search / Preview | 搜索和预览可用 | Search -> Preview -> Open/Explain |
-| M4 Context / Chat / Note | Context Basket + Chat + Save Note | Ask -> Save -> Jump back |
-| M5 Semantic-lite / Anchor | symbol、definition candidates、anchor | 基本语义导航和 note 回跳 |
+| M4 Context / Chat / Knowledge | Context Basket + Chat + Save Answer / Annotate | Ask -> Save -> Jump back |
+| M5 Semantic-lite / Anchor | symbol、definition candidates、anchor | 基本语义导航和 source chip 回跳 |
 | M6 Validation | 测试用户验证 | 指标和反馈复盘 |
 
 ## 3. 第一阶段 Walking Skeleton
@@ -37,7 +37,7 @@
 - mock reader payload。
 - mock search。
 - mock chat streaming。
-- mock save note。
+- mock Save Answer / Annotation。
 - Context Basket UI。
 
 不接：
@@ -56,7 +56,7 @@ Open app
   -> select code
   -> add context
   -> ask mock chat
-  -> save note
+  -> Save Answer
   -> jump back to source
 ```
 
@@ -96,7 +96,7 @@ Open app
 - file tree / file content。
 - reader payload。
 - ripgrep search。
-- save note。
+- Save Answer / Annotation。
 - 第一轮用户 demo。
 
 ## 6. Issue 清单草案
@@ -123,7 +123,8 @@ Open app
 - 接入 CodeMirror read-only spike。
 - 创建 Context Basket UI。
 - 创建 Chat / Agent Surface mock streaming。
-- 创建 Save Note Tray。
+- 创建 Save Answer Tray。
+- 创建 Annotation mini sheet。
 - 创建 Search / Preview mock。
 
 ### Backend
@@ -135,7 +136,7 @@ Open app
 - 创建 reader payload endpoint。
 - 创建 context resolve endpoint。
 - 创建 chat stream mock。
-- 创建 note save endpoint。
+- 创建 saved-answer / annotation endpoint。
 
 ### Agent
 
@@ -181,7 +182,7 @@ Agent benchmark
 | 前后端 schema 不一致 | 高 | Architect | shared schema review |
 | Clone 网络不稳定 | 中 | BE | timeout/proxy/readable error |
 | Reader 移动端体验差 | 高 | FE/UX | viewport QA |
-| 保存笔记打断阅读 | 中 | FE/PM | Save Note 轻动作 |
+| 保存动作打断阅读 | 中 | FE/PM | Save Answer / Annotate 轻动作 |
 | 安全边界遗漏 | 高 | BE/CTO | sandbox/security review |
 
 ## 9. 评审机制

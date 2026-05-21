@@ -22,7 +22,7 @@ MVP 要证明的核心命题：
 1. 让用户可以从公共 GitHub URL 引入仓库，并在手机上稳定阅读源码。
 2. 让用户可以通过函数折叠、搜索、跳转定义、查找引用和阅读轨迹完成基础源码理解。
 3. 让用户可以把当前文件、函数、选区作为上下文向 AI 提问。
-4. 让用户可以把 AI 回答和手动理解沉淀为 Markdown 笔记、代码批注和学习日报。
+4. 让用户可以把 AI 回答和手动理解沉淀为带源码 anchor 的保存回答、代码旁批和整理型学习笔记。
 
 ### 1.3 MVP 非目标
 
@@ -74,17 +74,18 @@ MVP 验收不以 HarmonyOS NEXT 原生运行作为交付标准，但技术验收
 8. 作为一个手机端用户，我希望阅读过程中有前进/后退轨迹和文件卡片视图，以便于从多次跳转后快速回到原来的上下文。
 9. 作为一个读源码的人，我希望打开 Chat 浮层，并把当前文件、函数或选区加入上下文，以便于向 AI 提问并获得针对当前代码的解释。
 10. 作为一个关注成本的用户，我希望在发送 AI 问题前看到 token / 费用粗略估算，以便于决定是否调整上下文。
-11. 作为一个源码学习者，我希望把 AI 回答保存为 Markdown 笔记，以便于后续复习和沉淀理解。
-12. 作为一个在代码旁做学习记录的用户，我希望笔记能绑定到具体代码位置，以便于之后从笔记跳回原始源码位置。
-13. 作为一个持续学习的用户，我希望 App 自动生成学习日报，以便于看到今天读过哪些文件、问过哪些问题、沉淀了哪些笔记。
+11. 作为一个源码学习者，我希望把 AI 回答保存为带源码 anchor 的学习条目，以便于之后复盘这次解释并跳回对应代码。
+12. 作为一个在代码旁做学习记录的用户，我希望能对当前行、函数或选区添加短批注，以便于不离开 Reader 也能留下局部理解。
+13. 作为一个源码学习者，我希望能把多个源码位置、AI 回答和批注整理进同一篇学习笔记，以便于课后形成可复习的 Markdown 文档。
 14. 作为一个经常在无网络环境下通勤的用户，我希望已 clone 仓库可以离线阅读，以便于网络不可用时仍能看源码。
 
 ### 2.2 P1 用户故事
 
 1. 作为一个进阶用户，我希望自定义快捷 Skill，以便于把常用读码 prompt 变成快捷操作。
 2. 作为一个多设备用户，我希望登录账号同步笔记、chat 历史和配置，以便于更换设备后继续使用。
-3. 作为一个源码学习者，我希望保存 AI 回答时同时保留原文和整理版，以便于既能复盘 AI 原始输出，也能查看可读性更强的笔记。
-4. 作为一个长期学习者，我希望生成知识卡片，以便于把一次源码理解沉淀成可复用的知识单元。
+3. 作为一个持续学习的用户，我希望 App 自动生成学习日报，以便于看到今天读过哪些文件、问过哪些问题、沉淀了哪些内容。
+4. 作为一个源码学习者，我希望保存 AI 回答时同时保留原文和整理版，以便于既能复盘 AI 原始输出，也能查看可读性更强的笔记。
+5. 作为一个长期学习者，我希望生成知识卡片，以便于把一次源码理解沉淀成可复用的知识单元。
 
 ## 3. 功能需求列表
 
@@ -136,19 +137,20 @@ MVP 验收不以 HarmonyOS NEXT 原生运行作为交付标准，但技术验收
 | AI-09 | AI 回复引用跳转 | P1 | AI 回复中识别到的文件/位置引用可点击跳转。 | 点击引用后主代码区跳到对应文件位置。 |
 | AI-10 | 自定义 Skill | P1 | 用户可通过文件或配置方式创建自定义 prompt / skill。 | Skill 可读取当前上下文规则并生成 prompt。 |
 
-### 3.4 知识沉淀：笔记 / 批注 / 日报
+### 3.4 知识沉淀：旁批 / 保存回答 / 学习笔记
 
 | ID | 功能 | 优先级 | 需求说明 | 验收标准 |
 |---|---|---|---|---|
-| KN-01 | Markdown 笔记 | P0 | 用户可创建和编辑 Markdown 笔记，默认存储在 App 私有目录。 | 笔记可创建、编辑、保存、查看。 |
-| KN-02 | 保存 AI 回答为笔记 | P0 | 用户可将 AI 回复保存为 Markdown 笔记。 | 保存后笔记关联项目、chat 消息和时间。 |
-| KN-03 | 代码位置 anchor | P0 | 笔记和批注通过 sidecar / 本地数据库记录代码位置 anchor，不改源码。 | 从笔记可跳回对应文件位置；源码未被修改。 |
-| KN-04 | 代码批注 | P0 | 用户可对当前文件、函数或选区添加批注。 | 批注展示在笔记列表和代码位置关联入口中。 |
-| KN-05 | 学习日报 | P0 | App 自动生成当天学习日报，统计读过文件、停留时间、问题、笔记、卡片数量。 | 当天有学习行为时可查看日报；生成日报不依赖大模型。 |
-| KN-06 | 笔记列表 | P0 | 按项目展示笔记、批注、日报入口。 | 用户可从项目进入对应笔记列表。 |
-| KN-07 | 原文 + 整理版保存 | P1 | 保存 AI 回答时，默认展示整理版，原文折叠保留。 | 笔记中可展开查看 AI 原始回答。 |
-| KN-08 | 知识卡片 | P1 | 用户可将笔记或 AI 回答提炼为知识卡片。 | 卡片包含标题、来源代码、我的理解、AI 总结、关联主题。 |
-| KN-09 | 笔记同步 | P1 | 登录后同步笔记、chat 历史、配置；API key 不同步。 | 登录同账号后可恢复笔记和历史。 |
+| KN-01 | Source Anchor | P0 | 保存回答、批注和学习笔记通过 sidecar / 本地数据库记录源码位置，不改源码。 | 从保存内容可跳回对应文件位置；低置信 anchor 不自动跳转。 |
+| KN-02 | Save Answer | P0 | 用户可将 AI 回复保存为带 source anchor 的学习条目。 | 保存后关联项目、chat message、Context Basket chip、source reference 和时间；保存后不离开 Reader。 |
+| KN-03 | Code Annotation | P0 | 用户可对当前文件、函数、行或选区添加短批注。 | 批注绑定 anchor，保存后代码 gutter 出现 bookmark，Reader 位置不改变。 |
+| KN-04 | NoteDocument | P0 | 用户可创建和编辑整理型 Markdown 学习笔记。 | 一篇笔记可引用多个源码位置、多个 AI 回答和多个批注。 |
+| KN-05 | Notebook | P0 | 每个 repo 默认有一个 Notebook，作为保存回答、批注和学习笔记的容器。 | 用户无需手动分类即可从 repo Notes 进入保存内容。 |
+| KN-06 | Notes Entry | P0 | 按项目展示保存回答、批注和学习笔记入口。 | 用户可从项目进入列表，并从 source chip 跳回源码。 |
+| KN-07 | Daily Report | P1 | App 自动生成当天学习日报，统计读过文件、停留时间、问题和保存内容。 | 当天有学习行为时可查看日报；生成日报不依赖大模型。 |
+| KN-08 | 原文 + 整理版保存 | P1 | 保存 AI 回答时，默认展示整理版，原文折叠保留。 | 笔记中可展开查看 AI 原始回答。 |
+| KN-09 | Knowledge Card | P1 | 用户可将笔记或 AI 回答提炼为知识卡片。 | 卡片包含标题、来源代码、我的理解、AI 总结、关联主题。 |
+| KN-10 | 笔记同步 | P1 | 登录后同步笔记、chat 历史、配置；API key 不同步。 | 登录同账号后可恢复笔记和历史。 |
 
 ## 4. 核心业务流程图描述
 
@@ -208,16 +210,15 @@ MVP 验收不以 HarmonyOS NEXT 原生运行作为交付标准，但技术验收
    - 回答保存在项目 chat 历史中。
    - 用户可继续追问，或从回答中的代码引用跳转回主阅读区。
 
-10. 用户沉淀笔记。
-    - 用户点击“保存为笔记”。
-    - App 生成 Markdown 笔记草稿。
-    - 笔记绑定当前文件、函数或选区 anchor。
-    - 用户可编辑标题和正文后保存。
+10. 用户保存 AI 回答。
+    - 用户点击 `Save Answer`。
+    - App 保存 AI 回答快照、关联 chat message、Context Basket chip 和 source anchor。
+    - 保存成功后留在 Reader / Chat 原位置，只显示 snackbar 和 gutter bookmark。
 
-11. App 更新学习日报。
-    - 记录用户读过的文件、停留时间、搜索/跳转行为、问题数量、保存笔记数量。
-    - 当天日报自动生成。
-    - 用户可从笔记页查看日报摘要。
+11. 用户课后整理学习笔记。
+    - 用户可从保存回答、批注或 Notes 入口创建 NoteDocument。
+    - NoteDocument 正文是 Markdown，可引用多个 source reference、AI 回答和批注。
+    - 用户可从笔记中的 source chip 跳回源码；anchor 低置信时不自动跳转。
 
 12. 同步与离线。
     - 未登录用户数据保存在本地。
@@ -273,10 +274,11 @@ MVP 验收不以 HarmonyOS NEXT 原生运行作为交付标准，但技术验收
 
 | 场景 | 处理规则 |
 |---|---|
-| 保存笔记失败 | 保留草稿，提示重试；不得丢失用户编辑内容。 |
-| anchor 定位失败 | 笔记仍可打开；代码跳转提示“原位置无法恢复”。 |
-| 用户删除仓库 | 同步删除该项目本地阅读状态；是否删除笔记需二次确认。 |
-| 日报无数据 | 当天无学习行为时不生成日报，或展示空日报状态。 |
+| Save Answer 失败 | 保留待保存草稿，提示重试；不得丢失 AI 回答、用户标题或已选 source reference。 |
+| Annotation 保存失败 | 保留 mini sheet 内容，提示重试；不得改变 Reader 位置。 |
+| anchor 定位失败 | 保存回答、批注和学习笔记仍可打开；代码跳转提示“原位置无法恢复”。 |
+| 用户删除仓库 | 同步删除该项目本地阅读状态；是否删除 Notebook / NoteDocument 需二次确认。 |
+| 日报无数据 | P1 才提供日报；当天无学习行为时不生成日报，或展示空日报状态。 |
 | 同步冲突 | MVP 可采用最后修改时间优先；冲突版本保留为副本。 |
 | API key 同步 | 明确禁止同步 API key，只保存在本机安全存储。 |
 | 源码隐私 | MVP 仅支持公共仓库；同步 chat 历史时需在隐私说明中告知可能包含源码片段。 |
@@ -328,26 +330,86 @@ MVP 验收不以 HarmonyOS NEXT 原生运行作为交付标准，但技术验收
 - createdAt
 - updatedAt
 
-### 6.5 Note
+### 6.5 Anchor
 
-- noteId
+- anchorId
 - projectId
-- title
-- markdownContent
-- sourceType：manual / aiAnswer / annotation / dailyReport
-- anchors
+- repoUrl
+- baseCommit
+- filePath
+- kind：file / symbol / selection / line
+- range
+- symbolName
+- fingerprint
+- resolutionStatus：exact / remapped / ambiguous / stale
+- confidence
 - createdAt
 - updatedAt
 
-### 6.6 DailyReport
+### 6.6 SourceReference
+
+- sourceRefId
+- anchorId
+- label
+- role：primary / supporting / mentioned
+- quote
+
+### 6.7 Annotation
+
+- annotationId
+- projectId
+- anchorId
+- text
+- status：active / stale
+- createdAt
+- updatedAt
+
+### 6.8 SavedAnswer
+
+- savedAnswerId
+- projectId
+- chatMessageId
+- contextChipIds
+- sourceRefs
+- title
+- answerMarkdown
+- userSummary
+- createdAt
+- updatedAt
+
+### 6.9 Notebook
+
+- notebookId
+- projectId
+- title
+- kind：repo / custom
+- defaultNoteId
+- createdAt
+- updatedAt
+
+### 6.10 NoteDocument
+
+- noteId
+- notebookId
+- projectId
+- title
+- markdownBody
+- sourceRefs
+- linkedAnnotationIds
+- linkedSavedAnswerIds
+- createdAt
+- updatedAt
+
+### 6.11 DailyReport
 
 - reportDate
 - projectIds
 - filesRead
 - readingDuration
 - questionsAsked
-- notesCreated
-- cardsCreated
+- savedAnswersCreated
+- annotationsCreated
+- noteDocumentsUpdated
 - summary
 
 ## 7. MVP 验收口径
@@ -361,9 +423,9 @@ MVP 必须完成以下闭环：
 3. 用户阅读一个源码文件，完成折叠/展开、搜索、跳转定义或引用查找。
 4. 用户把当前函数或选区加入上下文篮子。
 5. 用户向 AI 提问并收到回答。
-6. 用户将回答保存为 Markdown 笔记。
-7. 用户可从笔记跳回代码位置。
-8. App 当天生成学习日报。
+6. 用户将 AI 回答保存为带 source anchor 的 SavedAnswer。
+7. 用户可从保存回答或 NoteDocument 跳回代码位置。
+8. 用户可在不离开 Reader 的情况下添加一条代码旁批。
 
 ### 7.2 体验底线
 
@@ -420,14 +482,14 @@ MVP 必须完成以下闭环：
 
 范围：
 
-- Markdown 笔记。
-- 保存 AI 回答为笔记。
+- Save Answer。
 - 代码位置 anchor。
 - 代码批注。
-- 学习日报。
+- NoteDocument。
+- repo 默认 Notebook 与 Notes Entry。
 - 基础账号与同步。
 
-交付目标：用户能把源码理解沉淀为可回看的知识资产。
+交付目标：用户能把源码理解沉淀为可回跳源码的学习证据，而不是被迫维护完整知识库。
 
 ## 9. 冷启动与首批用户验证计划
 
@@ -471,12 +533,12 @@ MVP 必须完成以下闭环：
 
 - 每天 15 分钟。
 - 每天围绕一个具体源码问题阅读。
-- 用户至少保存一条 Markdown 笔记、代码批注或学习日报记录。
+- 用户至少保存一条 AI 回答、代码批注或整理型学习笔记。
 - 第 7 天沉淀一份可分享的学习总结。
 
 产品依赖：
 
-- MVP 已支持 Markdown 笔记和学习日报时，可先手动组织打卡活动。
+- MVP 已支持 Save Answer、Annotation 和 NoteDocument 时，可先手动组织打卡活动。
 - v0.2 可增加公开学习卡片、打卡进度和分享图能力。
 
 ### 9.4 v0.2 / v0.3：开源轻量读码索引与笔记格式规范
@@ -486,13 +548,13 @@ MVP 必须完成以下闭环：
 可开源内容：
 
 - `pocketvibe://` anchor 规范。
-- Markdown 笔记引用格式。
-- 示例仓库学习日报模板。
+- Markdown source reference 引用格式。
+- 示例仓库学习笔记 / 日报模板。
 - 读码路线包的目录结构和元数据格式。
 
 前置条件：
 
-- 代码位置 anchor、笔记、日报的数据结构在 MVP 使用中验证稳定。
+- 代码位置 anchor、SavedAnswer、Annotation、NoteDocument 的数据结构在 MVP 使用中验证稳定。
 - 至少完成 3 个官方读码路线包，避免过早开源空规范。
 
 ### 9.5 冷启动验证指标
@@ -503,5 +565,5 @@ MVP 必须完成以下闭环：
 - 首次 clone 成功率。
 - 首次阅读后 24 小时内再次打开率。
 - 单用户 7 天内阅读天数。
-- 保存笔记、批注或学习日报的用户占比。
+- 保存 AI 回答、批注或学习笔记的用户占比。
 - 用户主动分享学习记录或反馈的数量。

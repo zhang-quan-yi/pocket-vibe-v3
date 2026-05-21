@@ -3,7 +3,7 @@
 版本：Design v0.2  
 日期：2026-05-17  
 阶段：工程启动前高层设计  
-适用范围：Web/PWA MVP；后续 Android / HarmonyOS NEXT 原生化复用同一 API contract、schema、Anchor、ContextChip、ToolCall 和 ChatSession 协议。
+适用范围：Web/PWA MVP；后续 Android / HarmonyOS NEXT 原生化复用同一 API contract、schema、Anchor、SourceReference、ContextChip、ToolCall 和 ChatSession 协议。
 
 ## 1. 文档定位
 
@@ -12,9 +12,9 @@
 | 文档 | 职责 | 不负责 |
 |---|---|---|
 | 本文档 | 产品技术路线、系统分层、跨端复用边界、MVP 阶段策略、红线和待决问题 | 前端组件细节、后端 API 细节、数据库字段细节 |
-| [Web/PWA 前端模块设计](./POCKET_VIBE_WEB_PWA_FRONTEND_MODULE_DESIGN.md) | App Shell、Reader Workbench、Code Reader、Search、Chat / Agent Surface、Context Basket、Notes、响应式布局、前端测试 | 后端服务实现、任务队列、模型网关 |
-| [Web/PWA 后端模块设计](./POCKET_VIBE_WEB_PWA_BACKEND_MODULE_DESIGN.md) | Core API、Workspace、Repo、File、Reader Payload、Index、Search、Semantic、Anchor、Context Resolver、Agent、Model Gateway、Note、Task Queue、Persistence | 前端 UI 组件、移动端交互细节 |
-| [移动端核心交互 UX 方案](./POCKET_VIBE_MOBILE_UX_SPEC.md) | 移动端关键体验、Reader first、Preview before jump、Chat / Save Note 行为验收 | 工程模块拆分 |
+| [Web/PWA 前端模块设计](./POCKET_VIBE_WEB_PWA_FRONTEND_MODULE_DESIGN.md) | App Shell、Reader Workbench、Code Reader、Search、Chat / Agent Surface、Context Basket、Knowledge Surface、响应式布局、前端测试 | 后端服务实现、任务队列、模型网关 |
+| [Web/PWA 后端模块设计](./POCKET_VIBE_WEB_PWA_BACKEND_MODULE_DESIGN.md) | Core API、Workspace、Repo、File、Reader Payload、Index、Search、Semantic、Anchor、Context Resolver、Agent、Model Gateway、Knowledge、Task Queue、Persistence | 前端 UI 组件、移动端交互细节 |
+| [移动端核心交互 UX 方案](./POCKET_VIBE_MOBILE_UX_SPEC.md) | 移动端关键体验、Reader first、Preview before jump、Chat / Save Answer 行为验收 | 工程模块拆分 |
 | [技术可行性与架构报告](./POCKET_VIBE_TECH_FEASIBILITY_ARCHITECTURE_REPORT.md) | 技术路线论证、Web/PWA vs Android/HarmonyOS、长期风险和参考资料 | 当前工程切片的模块设计 |
 
 ## 2. 设计目标
@@ -22,14 +22,14 @@
 Pocket Vibe 第一阶段采用 **Web/PWA 优先验证**。目标不是一次性做完整移动 IDE，而是最快验证：
 
 ```text
-Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save note -> Jump back
+Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save Answer -> Jump back
 ```
 
 本阶段要钉住五件事：
 
 1. Web/PWA shell、后端 core service、未来 Android/HarmonyOS shell 的边界。
-2. Reader、Search、Definition、Chat、Note、Anchor 的共享协议。
-3. `ContextChip`、`ToolCall`、`Anchor`、`Note`、`ChatSession` 等平台无关 schema。
+2. Reader、Search、Definition、Chat、Knowledge、Anchor 的共享协议。
+3. `ContextChip`、`ToolCall`、`Anchor`、`SourceReference`、`SavedAnswer`、`Annotation`、`NoteDocument`、`Notebook`、`ChatSession` 等平台无关 schema。
 4. Agent 能力的产品预期和开源生态复用策略。
 5. 后续原生端只替换 shell / renderer / storage adapter / local core，不重做业务协议。
 
@@ -37,7 +37,7 @@ Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save no
 
 ### 3.1 Reader first
 
-Reader 是主场景。Search、Definition、Chat、Context Basket、Note 都服务于代码阅读，不应把 Reader 降级成背景面板。
+Reader 是主场景。Search、Definition、Chat、Context Basket、Save Answer、Annotation 和 NoteDocument 都服务于代码阅读，不应把 Reader 降级成背景面板。
 
 ### 3.2 Preview before jump
 
@@ -75,7 +75,7 @@ flowchart LR
 
   Web --> FrontendState["Client Store / UI State"]
   Web --> Reader["CodeMirror Reader Adapter"]
-  Web --> ChatUI["Chat / Context / Note UI"]
+  Web --> ChatUI["Chat / Context / Knowledge UI"]
 
   Api --> Repo["Repo / File Service"]
   Api --> ReaderPayload["Reader Payload Service"]
@@ -84,7 +84,7 @@ flowchart LR
   Api --> Anchor["Anchor Service"]
   Api --> Context["Context Resolver"]
   Api --> Agent["Agent Orchestrator"]
-  Api --> Note["Note / Daily Report Service"]
+  Api --> Knowledge["Knowledge Service"]
   Api --> Task["Task Queue / Workers"]
   Api --> Storage["DB / Repo Storage / Cache"]
 
@@ -104,9 +104,9 @@ flowchart LR
 
 | 层 | 当前 Web/PWA 责任 | 后续原生端责任 | 不应承担 |
 |---|---|---|---|
-| Web/PWA Shell | Reader、Search、Chat、Context Basket、Note、PWA shell cache、前端状态 | 不适用 | git clone、重型索引、LSP runtime、模型 provider 直连 |
-| Backend Core API | repo、file、reader payload、search、semantic、anchor、context、agent、note、task、persistence | 首版 Android/HarmonyOS 继续复用 | UI 私有状态、平台 View 坐标 |
-| Shared Schema | Project、SourceRange、Anchor、ContextChip、ToolCall、ChatSession、Note、ReaderPayload 等语义 | 全端复用 | 框架私有类型 |
+| Web/PWA Shell | Reader、Search、Chat、Context Basket、Knowledge Surface、PWA shell cache、前端状态 | 不适用 | git clone、重型索引、LSP runtime、模型 provider 直连 |
+| Backend Core API | repo、file、reader payload、search、semantic、anchor、context、agent、knowledge、task、persistence | 首版 Android/HarmonyOS 继续复用 | UI 私有状态、平台 View 坐标 |
+| Shared Schema | Project、SourceRange、Anchor、SourceReference、ContextChip、ToolCall、ChatSession、SavedAnswer、Annotation、NoteDocument、Notebook、ReaderPayload 等语义 | 全端复用 | 框架私有类型 |
 | Future Native Shell | Android / HarmonyOS 原生 UI、原生 Reader、系统安全存储、离线状态恢复 | 替换 Web shell | 重写 Agent 协议和业务模型 |
 | Future Local Core | 本地 parse、search、anchor resolver、部分 repo/index 能力 | 在价值明确后下沉 | 从第一天搬完整后端 |
 
@@ -128,8 +128,9 @@ flowchart LR
 - Definition / References Peek
 - Context Basket
 - Chat / Agent Surface
-- Save Note Tray
-- Notes Surface
+- Save Answer Tray
+- Annotation Mini Sheet
+- Knowledge Surface
 - Cards / Trail
 - Settings
 - Client Store
@@ -156,8 +157,7 @@ flowchart LR
 - Agent Orchestrator
 - Tool Gateway
 - Model Gateway
-- Note Service
-- Daily Report Service
+- Knowledge Service
 - Capability Service
 - Task Service / Queue
 - Persistence / Storage
@@ -172,13 +172,13 @@ flowchart LR
 |---|---|---|
 | `Project` / `Workspace` | repo 和工作区元数据 | 后端模块设计 |
 | `SourceRange` | 平台无关代码范围 | 高层 + shared schema |
-| `Anchor` | 可恢复代码位置、Note source、stale recovery | 后端模块设计 |
+| `Anchor` | 可恢复代码位置、source reference、stale recovery | 后端模块设计 |
 | `ReaderPayload` | Web CodeMirror 和未来原生 Reader 共同消费 | 前端/后端模块设计 |
 | `ContextChip` | 用户可见上下文篮子 | 前端模块设计 |
 | `ResolvedContext` | 发送给 Agent 前的解析结果 | 后端模块设计 |
 | `ToolCall` / `ToolCallLog` | Agent 工具调用和审计 | 后端模块设计 |
 | `ChatSession` / `AgentRun` | Chat 和多步读码任务 | 后端模块设计 |
-| `Note` / `DailyReport` | 知识沉淀 | 后端模块设计 |
+| `SourceReference` / `SavedAnswer` / `Annotation` / `NoteDocument` / `Notebook` | 知识沉淀 | 后端模块设计 |
 | `CapabilityStatus` | indexing、semantic、model、offline 等能力状态 | 高层 + 后端模块设计 |
 
 硬性要求：
@@ -219,7 +219,7 @@ sequenceDiagram
   participant API as Backend API
   participant Context as Context Resolver
   participant Agent as Agent Orchestrator
-  participant Note as Note Service
+  participant Knowledge as Knowledge Service
 
   FE->>Basket: Add selection / definition / search chip
   Basket->>API: Resolve context
@@ -228,20 +228,20 @@ sequenceDiagram
   FE->>API: Send Ask / Agentic Reading
   API->>Agent: run with tools
   Agent-->>FE: stream answer and ToolCallLog
-  FE->>API: Save note
-  API->>Note: create note with anchors
+  FE->>API: Save Answer
+  API->>Knowledge: create SavedAnswer with SourceReference
 ```
 
-### 8.3 Note -> Source
+### 8.3 SavedAnswer / NoteDocument -> Source
 
 ```mermaid
 sequenceDiagram
-  participant FE as Notes UI
+  participant FE as Knowledge UI
   participant API as Backend API
   participant Anchor as Anchor Service
   participant Reader as Reader
 
-  FE->>API: Resolve note source anchor
+  FE->>API: Resolve source reference anchor
   API->>Anchor: resolve anchor
   Anchor-->>FE: exact location or candidates
   FE->>Reader: Jump only if confident or user confirms
@@ -268,8 +268,8 @@ Pocket Vibe 自研或深度定制：
 - SourceRange / Anchor / stale recovery。
 - Context Basket 的移动端呈现。
 - Preview before jump。
-- Note / DailyReport / read-pack draft。
-- Reader / Chat / Note 状态保持。
+- SavedAnswer / Annotation / NoteDocument / read-pack draft。
+- Reader / Chat / Knowledge 状态保持。
 - Android non-GMS 和未来原生 Reader 适配。
 
 ## 10. Android 后续策略
@@ -299,7 +299,7 @@ Android 阶段：
 
 Go / No-Go 门槛：
 
-- Web/PWA 真实 `Read -> Ask -> Save` 成立。
+- Web/PWA 真实 `Read -> Ask -> Save Answer` 成立。
 - 用户反馈集中在移动端手感、离线、本地仓库、安全存储。
 - API contract、schema、Anchor、ContextChip、ToolCall、ChatSession 稳定。
 - ReaderPayload 与 CodeMirror 解耦，可被 Kotlin renderer 消费。
@@ -311,12 +311,12 @@ Go / No-Go 门槛：
 | Slice | 目标 | 关键交付 |
 |---|---|---|
 | Slice 0 | 设计冻结 | 高层、前端、后端文档；schema 草案；Agent benchmark 计划 |
-| Slice 1 | Mock walking skeleton | Web shell、API skeleton、mock reader/search/chat/note |
+| Slice 1 | Mock walking skeleton | Web shell、API skeleton、mock reader/search/chat/knowledge |
 | Slice 2 | Repo / File | public GitHub import、clone task、file tree、open file |
 | Slice 3 | Reader / Search | ReaderPayload、CodeMirror read-only、ripgrep search、preview |
 | Slice 4 | Structure / Semantic-lite / Anchor | symbols、folds、definition/reference candidates、Anchor create/resolve |
-| Slice 5 | Context / Agent / Note | Context Resolver、Agent Orchestrator、ToolCallLog、Model Gateway、Save Note |
-| Slice 6 | Validation / Polish | daily report、observability、mobile viewport QA、error/degradation QA |
+| Slice 5 | Context / Agent / Knowledge | Context Resolver、Agent Orchestrator、ToolCallLog、Model Gateway、Save Answer、Annotate |
+| Slice 6 | Validation / Polish | observability、mobile viewport QA、error/degradation QA；Daily Report 作为 P1 |
 
 ## 12. 首批技术决策建议
 
@@ -352,6 +352,7 @@ MVP 不做：
 - GMS / Firebase / FCM 硬依赖。
 - Skill marketplace。
 - 复杂知识卡片系统。
+- 将 Daily Report 作为 P0 前置依赖。
 
 ## 14. 工程启动前检查清单
 
@@ -382,7 +383,7 @@ MVP 不做：
 ## 16. 下一步建议
 
 1. API / DTO review：整理正式 shared schema 草案。
-2. Frontend state review：对齐 Reader、Context Basket、Chat、Note 状态。
+2. Frontend state review：对齐 Reader、Context Basket、Chat、Knowledge 状态。
 3. Backend API review：对齐 Go service module、API group、task model、error model。
 4. Agent product benchmark：拆解 Cursor、Claude Code、Codex、Copilot Chat / Agent Mode、opencode。
 5. Agent ecosystem PoC：选 2-3 个框架验证工具权限、ToolCallLog、自定义读码工具、streaming、cancel 和 self-host。

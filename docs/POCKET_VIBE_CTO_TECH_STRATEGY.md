@@ -88,7 +88,7 @@ MVP 原则：
 CTO 目标：
 
 - 复用成熟 runtime / workflow / tool trace。
-- 自研 Pocket Vibe 独有的 Anchor、Context Basket、Preview、Note、Mobile Reader。
+- 自研 Pocket Vibe 独有的 Anchor、SourceReference、Context Basket、Preview、SavedAnswer、Annotation、NoteDocument、Mobile Reader。
 - Go 后端保持 Agent 权限、ToolCallLog、Context Resolver 的权威；必要时通过 adapter 调用 Python / TypeScript / 外部 agent worker。
 
 ## 5. 国内与 self-host 约束
@@ -118,7 +118,7 @@ CTO 目标：
 - path traversal 防护。
 - Agent 不得访问 repo 外文件。
 - Tool permission 后端强校验。
-- Chat / Note 同步前需要隐私说明。
+- Chat / Knowledge 同步前需要隐私说明。
 
 ## 7. 成本模型
 
@@ -141,7 +141,7 @@ MVP 不能无限制开放大仓库和长任务。
 
 - URL -> Reader 成功率可接受。
 - Read -> Ask -> Save 有真实用户完成。
-- Save Note 转化证明知识沉淀有价值。
+- Save Answer / Annotate 转化证明知识沉淀有价值。
 - Agentic Reading 比普通 Chat 更有用。
 
 启动 Android 原生化：
@@ -154,7 +154,7 @@ MVP 不能无限制开放大仓库和长任务。
 不启动 Android：
 
 - 用户不重复阅读。
-- Agent/Note 使用率低。
+- Agent/Knowledge 使用率低。
 - 核心问题仍是产品闭环不成立。
 
 ## 9. 技术债控制
@@ -180,7 +180,7 @@ MVP 不能无限制开放大仓库和长任务。
 最小团队角色：
 
 - 产品/UX：负责读码闭环和验证。
-- 前端：Reader、Context Basket、Chat、Note。
+- 前端：Reader、Context Basket、Chat、Knowledge Surface。
 - 后端：Go Core API、repo、search、semantic、anchor、agent、worker。
 - 架构/平台：schema、API、task、security。
 - Agent researcher：benchmark + PoC。

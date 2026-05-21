@@ -22,7 +22,7 @@ Public GitHub URL
   -> search / symbol / definition / references
   -> Context Basket resolve
   -> Ask / Agentic Reading
-  -> Save Note / Anchor / Daily Report
+  -> Save Answer / Annotation / NoteDocument / Anchor
 ```
 
 本阶段不写业务代码，但要把后端边界、模块职责、API 分组、数据持久化、异步任务、Agent 复用策略和安全约束设计清楚。
@@ -45,7 +45,7 @@ TypeScript 继续作为 Web/PWA 前端主栈。前后端共享不再依赖 TypeS
 
 ### 2.4 Async by default
 
-clone、index、search warmup、semantic indexing、anchor re-resolve、Agent 多步任务、daily report 生成都应按任务处理。短请求返回状态，长任务通过 polling、SSE 或 event stream 通知前端。
+clone、index、search warmup、semantic indexing、anchor re-resolve、Agent 多步任务都应按任务处理。短请求返回状态，长任务通过 polling、SSE 或 event stream 通知前端。Daily Report 是 P1，本阶段不作为任务前置依赖。
 
 ### 2.5 Honest degradation
 
@@ -80,7 +80,7 @@ flowchart TB
   Api --> Anchor["Anchor Service"]
   Api --> Context["Context Resolver Service"]
   Api --> Agent["Agent Orchestrator"]
-  Api --> Note["Note Service"]
+  Api --> Knowledge["Knowledge Service"]
   Api --> Capability["Capability Service"]
 
   Agent --> AgentAdapter["Agent Runtime Adapter"]
@@ -93,7 +93,7 @@ flowchart TB
   Semantic --> TreeSitter["Tree-sitter"]
   Semantic --> LSP["Optional LSP Workers"]
   Anchor --> Db["DB"]
-  Note --> Db
+  Knowledge --> Db
   Capability --> Db
 
   Api --> TaskQueue["Task Queue"]
@@ -136,8 +136,7 @@ services/core/
       contextresolver/
       agent/
       modelgateway/
-      note/
-      dailyreport/
+      knowledge/
       capability/
       task/
       observability/
@@ -176,8 +175,11 @@ services/core/
 | `/context` | resolve context chips、estimate token、trim preview | P0 |
 | `/chat` | session、message、streaming response、cancel | P0 |
 | `/agent-runs` | Agentic Reading run、ToolCallLog stream | P0/P1 |
-| `/notes` | create、update、list、delete、source jump | P0 |
-| `/daily-reports` | local/statistical daily report draft | P0/P1 |
+| `/saved-answers` | save AI answer、list、detail、delete、source jump | P0 |
+| `/annotations` | create、update、list、delete、source jump | P0 |
+| `/note-documents` | create、update、list、delete、source jump | P0 |
+| `/notebooks` | repo default notebook、list | P0 |
+| `/daily-reports` | local/statistical daily report draft | P1 |
 | `/capabilities` | repo / index / semantic / model capability status | P0 |
 | `/settings` | model profile、provider config | P0/P1 |
 
@@ -214,7 +216,7 @@ services/core/
 
 - 创建匿名 workspace。
 - 维护 workspace 配额、TTL、repo 数量限制。
-- 隔离 repo storage、notes、chat sessions、tasks。
+- 隔离 repo storage、knowledge records、chat sessions、tasks。
 - 后续账号系统接入前，支撑匿名体验。
 
 核心字段：
@@ -310,7 +312,7 @@ sequenceDiagram
 
 职责：
 
-- 聚合文件内容、highlight chunks、fold ranges、symbol refs、note anchors、capability status。
+- 聚合文件内容、highlight chunks、fold ranges、symbol refs、knowledge anchors、capability status。
 - 为 Web CodeMirror 和未来 Android native reader 提供同一 payload。
 
 输入：
@@ -454,7 +456,7 @@ Anchor 组成：
 MVP 原则：
 
 - stale 时返回候选，不自动跳。
-- note 永远可以打开。
+- SavedAnswer、Annotation 和 NoteDocument 永远可以打开。
 - anchor resolver 不依赖 UI 坐标。
 
 ### 6.10 Context Resolver Service
@@ -490,7 +492,7 @@ flowchart LR
 - definition chip。
 - references chip。
 - search result chip。
-- note chip。
+- saved answer / annotation / note document chip。
 - codebase query intent。
 
 `#codebase` 策略：
@@ -563,9 +565,9 @@ MVP 工具：
 | `definition` | Safe read | 查定义候选 |
 | `references` | Safe read | 查引用候选 |
 | `resolveAnchor` | Safe read | 解析 Anchor |
-| `createNoteDraft` | App write | 创建笔记草稿 |
+| `createStudyNoteDraft` | App write | 创建整理型学习笔记草稿 |
 | `createAnnotationDraft` | App write | 创建批注草稿 |
-| `createDailyReportDraft` | App write | 创建日报草稿 |
+| `createDailyReportDraft` | App write / P1 | 创建日报草稿 |
 
 禁止工具：
 
@@ -604,34 +606,37 @@ API key 策略待定：
 
 - API key 不写日志。
 - error log 脱敏。
-- chat / note 同步前做隐私说明。
+- chat / knowledge 同步前做隐私说明。
 
-### 6.14 Note Service
+### 6.14 Knowledge Service
 
 职责：
 
-- Markdown note CRUD。
-- save AI response as note。
-- annotation draft。
+- SavedAnswer CRUD：保存 AI response、Context Basket chip 和 SourceReference。
+- Annotation CRUD：保存当前行、函数或选区的短批注。
+- NoteDocument CRUD：整理型 Markdown 学习笔记。
+- Notebook：repo 默认容器。
 - source anchors。
-- note source jump。
-- note list by project。
+- source jump。
+- knowledge list by project。
 
-Note 不做：
+Knowledge Service 不做：
 
 - 写回源码仓库。
 - 修改用户代码。
 - 复杂知识卡片系统。
+- 将 Daily Report 作为 P0 前置依赖。
 
 ### 6.15 Daily Report Service
 
 职责：
 
+- P1 能力，不作为 P0 保存闭环前置。
 - 根据本地行为生成统计型日报。
 - 文件阅读列表。
 - 停留时间。
 - 搜索 / 跳转 / 提问次数。
-- 保存笔记和批注数量。
+- SavedAnswer、Annotation 和 NoteDocument 数量。
 - 生成 Markdown draft。
 
 MVP 原则：
@@ -682,7 +687,7 @@ type CapabilityStatus =
 - semantic warmup。
 - anchor re-resolve。
 - agent run。
-- daily report draft。
+- daily report draft（P1）。
 
 状态：
 
@@ -710,7 +715,7 @@ type CapabilityStatus =
 | workspace / project / repo metadata | relational DB |
 | tasks / status / capability | relational DB |
 | chat session / messages / ToolCallLog | relational DB |
-| notes / anchors / reports | relational DB |
+| saved answers / annotations / note documents / notebooks / anchors | relational DB |
 | repo files | filesystem / object storage |
 | index cache | filesystem / DB hybrid |
 | temporary snippets | cache with TTL |
@@ -732,7 +737,7 @@ type CapabilityStatus =
 - provider secret。
 - full prompt。
 - large source snippets。
-- user note content 默认不进日志。
+- user knowledge content 默认不进日志。
 
 关键指标：
 
@@ -741,7 +746,7 @@ type CapabilityStatus =
 - search latency。
 - reader payload latency。
 - Agent run success / cancel / fail。
-- note save success。
+- save answer / annotation success。
 - anchor resolve confidence。
 
 ### 6.20 Security / Privacy
@@ -851,9 +856,9 @@ type AgentRun = {
 
 同高层设计定义，后端为权威来源。
 
-### 7.8 Anchor / Note / ChatSession
+### 7.8 Anchor / Knowledge / ChatSession
 
-沿用高层设计，并在 schema review 中补齐数据库字段和索引。
+沿用高层设计。Knowledge 侧必须拆为 `SourceReference`、`SavedAnswer`、`Annotation`、`NoteDocument`、`Notebook`，并在 schema review 中补齐数据库字段和索引。
 
 ## 8. 核心流程
 
@@ -902,21 +907,21 @@ sequenceDiagram
   Agent-->>FE: SSE events and answer
 ```
 
-### 8.3 Save Note with Anchor
+### 8.3 Save Answer with Anchor
 
 ```mermaid
 sequenceDiagram
   participant FE as Frontend
   participant API as Core API
   participant Anchor as Anchor Service
-  participant Note as Note Service
+  participant Knowledge as Knowledge Service
 
-  FE->>API: POST /notes
+  FE->>API: POST /saved-answers
   API->>Anchor: create anchors
   Anchor-->>API: Anchor[]
-  API->>Note: create note
-  Note-->>API: saved note
-  API-->>FE: note with source anchors
+  API->>Knowledge: create SavedAnswer + SourceReference
+  Knowledge-->>API: saved answer
+  API-->>FE: SavedAnswer with source anchors
 ```
 
 ## 9. API 草案
@@ -964,17 +969,26 @@ GET  /agent-runs/:runId/events
 POST /agent-runs/:runId/cancel
 ```
 
-### 9.5 Notes / Anchors
+### 9.5 Knowledge / Anchors
 
 ```text
 POST /anchors
 POST /anchors/resolve
 POST /anchors/candidates
-POST /notes
-GET  /notes?projectId=
-GET  /notes/:noteId
-PUT  /notes/:noteId
-DELETE /notes/:noteId
+POST /saved-answers
+GET  /saved-answers?projectId=
+GET  /saved-answers/:savedAnswerId
+DELETE /saved-answers/:savedAnswerId
+POST /annotations
+GET  /annotations?projectId=
+PUT  /annotations/:annotationId
+DELETE /annotations/:annotationId
+POST /note-documents
+GET  /note-documents?projectId=
+GET  /note-documents/:noteId
+PUT  /note-documents/:noteId
+DELETE /note-documents/:noteId
+GET  /notebooks?projectId=
 ```
 
 ## 10. 错误模型
@@ -1078,11 +1092,12 @@ type ApiError = {
 
 - Agent 能使用 read/search/semantic 工具完成可追踪读码任务。
 
-### BE Slice 6：Notes / Daily Report / Observability
+### BE Slice 6：Knowledge / Observability
 
-- notes CRUD。
-- save AI response as note。
-- daily report draft。
+- SavedAnswer / Annotation / NoteDocument CRUD。
+- save AI response as SavedAnswer。
+- source reference jump。
+- Daily Report draft 作为 P1。
 - task logs。
 - metrics。
 
@@ -1123,7 +1138,7 @@ type ApiError = {
 - reader payload。
 - search。
 - semantic fallback。
-- note save。
+- save answer / annotation。
 - agent tool call。
 
 ### 13.3 Fixture repos

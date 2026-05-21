@@ -68,7 +68,7 @@ Cursor 的移动端相关能力更偏向让用户在网页或手机上派发 Bac
 
 3. 知识沉淀是闭环，不是附属功能。
 
-   Pocket Vibe 的闭环是：读源码 -> 问 AI -> 理解 -> 生成 Markdown 笔记 / 代码批注 / 知识卡片 / 学习日报。GitHub Mobile 沉淀在 PR/Issue，Replit 沉淀在项目，Cursor 沉淀在代码变更；Pocket Vibe 沉淀在个人源码知识库。
+   Pocket Vibe 的闭环是：读源码 -> 问 AI -> 理解 -> Save Answer / Annotate -> Jump back。GitHub Mobile 沉淀在 PR/Issue，Replit 沉淀在项目，Cursor 沉淀在代码变更；Pocket Vibe 沉淀为可回跳源码的学习证据链。
 
 4. Android 优先可以成为早期壁垒。
 
@@ -128,10 +128,10 @@ MVP 解决程度：方向很好，但范围偏重。
 
 已覆盖能力：
 
-- Markdown 笔记。
-- 代码批注。
-- 知识卡片。
-- 学习日报。
+- Save Answer。
+- Code Annotation。
+- NoteDocument。
+- 默认 repo Notebook。
 - 代码位置 anchor。
 - chat 历史。
 - 账号同步。
@@ -139,8 +139,8 @@ MVP 解决程度：方向很好，但范围偏重。
 关键风险：
 
 - MVP 同时做笔记、批注、卡片、日报、同步，容易拖慢核心阅读体验。
-- 建议第一版把沉淀收敛成三个最小动作：保存 AI 回答为笔记、给当前代码位置添加批注、自动生成当日学习记录。
-- 知识卡片和复杂双链可以先有数据结构，交互不宜过重。
+- 建议第一版把沉淀收敛成三个最小动作：Save Answer、Annotate Code、Create Study Note。
+- Daily Report、Knowledge Card 和复杂双链不应作为 P0 前置依赖。
 
 总体评价：MVP 没有“完美”解决三大阻力，但方向是对的。最强的是“跳转/回溯”，最需要打磨的是“竖屏阅读默认体验”，最需要收敛的是“知识沉淀范围”。
 
@@ -175,7 +175,7 @@ MVP 解决程度：方向很好，但范围偏重。
 
 - 每天 15 分钟。
 - 每天一个问题：入口在哪、核心数据结构是什么、一次请求怎么流动、哪个函数最关键。
-- 用户用 Pocket Vibe 保存一条笔记或学习日报。
+- 用户用 Pocket Vibe 保存一条 AI 回答、代码批注或整理型学习笔记。
 - 最后生成一张公开学习卡片。
 
 这个策略会把产品从“工具”变成“学习行为”，对学生群体尤其友好。
@@ -187,8 +187,8 @@ MVP 解决程度：方向很好，但范围偏重。
 可开源内容：
 
 - `pocketvibe://` anchor 规范。
-- Markdown 笔记引用格式。
-- 示例仓库学习日报模板。
+- Markdown source reference 引用格式。
+- 示例仓库学习笔记 / 日报模板。
 - Tree-sitter / LSP 移动端索引实验记录。
 
 这样可以吸引真正懂源码工具的人参与讨论，也能让早期用户相信：Pocket Vibe 的笔记不是锁死在 App 里的，而是未来能迁移、能同步、能成为个人知识库的一部分。

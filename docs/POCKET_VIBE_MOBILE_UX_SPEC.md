@@ -18,7 +18,7 @@ Pocket Vibe 的 MVP 先证明一件事：用户真的愿意在手机上认真读
 1. 用户在 Reader 中找到或搜索 `resolveModule`。
 2. 先预览定义，不立刻跳走。
 3. 在 Definition Peek 中点击 `Explain definition`。
-4. 在 Chat 中看到解释，并保存为笔记。
+4. 在 Chat 中看到解释，并点击 `Save Answer` 保存为带源码 anchor 的学习条目。
 5. 保存后仍停留在原代码上下文，看到成功反馈和 gutter bookmark。
 
 这条链路应不超过 4 次关键点击，不丢阅读位置，不被 sheet、键盘或横屏裁切打断。
@@ -46,7 +46,7 @@ Pocket Vibe 的 MVP 先证明一件事：用户真的愿意在手机上认真读
 
 - 搜索结果行点击直接进入 preview。
 - Definition Peek 的主操作是 `Explain definition`。
-- 保存笔记是轻动作，不跳完整 Notes 页面。
+- 保存 AI 回答和代码旁批是轻动作，不跳完整 Notes 页面。
 
 浮层要轻：
 
@@ -80,7 +80,7 @@ Reader 必须支持：
 - 横向查看长行，或切换软换行。
 - 点击 / 长按 token 触发符号动作。
 - 折叠入口可发现，不只存在独立页面。
-- Gutter bookmark 表示笔记或批注 anchor。
+- Gutter bookmark 表示 SavedAnswer 或 Annotation anchor。
 
 ### 3.2 显性工具入口
 
@@ -176,11 +176,11 @@ Chat 默认半屏，目标是短问答，不是完整聊天页。它必须保留
 4. AI response。
 5. `textarea` 输入框和 Send。
 6. token / cost 状态。
-7. 仅当已有 AI response 时出现 `Save note`。
+7. 仅当已有 AI response 时出现 `Save Answer`。
 
 ### 6.2 Keyboard-aware 规则
 
-Chat 和 Save Note 都必须把键盘态当成一等状态：
+Chat、Save Answer tray 和 Annotation mini sheet 都必须把键盘态当成一等状态：
 
 - 不自动聚焦输入框。
 - 键盘弹起后输入栏贴键盘上方。
@@ -197,35 +197,72 @@ token 超限时：
 - 提供 Trim context。
 - 不丢失用户输入。
 
-## 7. 保存笔记与 Anchor
+## 7. 知识沉淀与 Anchor
 
-### 7.1 Save Note 是轻动作
+### 7.1 对象心智模型
+
+知识沉淀遵循“读教材”的心智，但不做完整知识库前置：
+
+- `Annotation` 是源码旁批：贴在当前行、函数或选区旁边，短、局部、不离开 Reader。
+- `SavedAnswer` 是被保存的 AI 回答：保留回答、提问上下文、Context Basket chip 和 source anchor。
+- `NoteDocument` 是课后整理的 Markdown 学习笔记：可引用多个源码位置、多个 AI 回答和多个批注。
+- `Notebook` 是 repo 默认容器：P0 不要求用户手动分类。
+- `Daily Report` 和 `Knowledge Card` 是 P1，不进入 P0 主路径。
+
+### 7.2 Save Answer 是轻动作
 
 保存 AI 回答不离开 Reader / Chat。保存后：
 
 - Save tray 收起或回到 Chat。
-- 出现 snackbar：`Saved to notes`。
+- 出现 snackbar：`Saved`。
 - snackbar 提供 `View` / `Undo`。
 - 对应代码 gutter 出现 bookmark。
 - 当前代码位置和 Chat context 不改变。
 
-### 7.2 Save Note Tray
+### 7.3 Save Answer Tray
 
 Save tray 内容：
 
 - 标题输入。
-- Source chip。
+- Source chip，来自本次回答使用的 Context Basket chip。
 - AI 摘要预览。
 - `Later`
-- `Save`
+- `Save Answer`
 
 如果没有 AI response，隐藏或禁用保存入口。
 
-### 7.3 Anchor 失效
+### 7.4 Annotate Code
+
+读代码时的手写记录用 `Annotate`，不是 `Save Answer`。
+
+触发方式：
+
+- 选中代码后出现操作条：`Ask` / `Annotate` / `Copy`。
+- 点击 gutter bookmark 可查看该位置已有批注。
+
+Annotation mini sheet 内容：
+
+- 当前 source chip。
+- 单个短文本输入框。
+- `Save Annotation`。
+
+保存后 mini sheet 收起，Reader 位置不改变，对应行或函数出现 gutter bookmark。
+
+### 7.5 Create Study Note
+
+整理型 Markdown 文档用 `Create Study Note` 或 `Add to Study Note`，只在用户明确要整理时出现：
+
+- 从 SavedAnswer 详情页：`Add to Study Note`。
+- 从 Notes 入口：`Create Study Note`。
+- 从 Annotation 列表：`Add to Study Note`。
+
+P0 不把这个动作放在 Reader 主操作位，避免移动端读码时被完整编辑器打断。
+
+### 7.6 Anchor 失效
 
 anchor 失效时：
 
-- 笔记仍可打开。
+- 保存回答、批注和学习笔记仍可打开。
 - source chip 进入 stale 状态。
 - 提供 Find candidates / Relink manually。
 - 不自动跳到低置信位置。
@@ -272,12 +309,12 @@ anchor 失效时：
 8. Definition Peek 中主操作是 `Explain definition`。
 9. 从找定义到让 AI 解释不超过 4 次关键点击。
 10. Chat 打开后当前函数或选区仍可见。
-11. 键盘弹起后 Send / Save / Later 不被遮挡。
+11. 键盘弹起后 Send / Save Answer / Save Annotation / Later 不被遮挡。
 12. token 超限时 Send 不可用，用户知道如何裁剪。
-13. 保存笔记后用户仍停留在阅读场景。
+13. 保存 AI 回答或批注后用户仍停留在阅读场景。
 14. 保存成功有 snackbar 和 gutter bookmark。
-15. 从笔记 source chip 能跳回代码；source 失效时不乱跳。
-16. 离线时已 clone 代码、搜索和笔记可用，Chat send 禁用。
+15. 从保存回答、批注或学习笔记的 source chip 能跳回代码；source 失效时不乱跳。
+16. 离线时已 clone 代码、搜索、保存回答和批注可用，Chat send 禁用。
 17. LSP indexing / failed 时不展示虚假的精准定义。
 18. 横屏状态能同时看到左侧代码和右侧活动面板。
 19. Tool Rail 不使用 `S / C / T`，按钮至少 44px。
@@ -290,10 +327,10 @@ anchor 失效时：
 1. Empty -> Paste URL -> Clone -> Reader。
 2. Reader -> Search -> result row -> Search Preview -> Back / Explain / Open。
 3. Reader -> token -> Symbol Menu -> Definition Peek -> Explain definition -> Chat。
-4. Chat -> Save note -> Saved feedback -> Reader 原位置。
+4. Chat -> Save Answer -> Saved feedback -> Reader 原位置。
 5. Reader -> Tool Rail -> Cards / Trail。
 6. Reader -> Landscape -> Reader。
-7. Notes -> Note Detail -> Source chip -> Reader。
+7. Notes -> SavedAnswer / NoteDocument detail -> Source chip -> Reader。
 
 本阶段不做：
 

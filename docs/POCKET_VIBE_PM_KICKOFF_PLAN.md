@@ -14,7 +14,7 @@ Pocket Vibe v3 第一阶段要验证一个明确命题：
 首发采用 Web/PWA 验证，不追求一次性完成 Android 原生、完整 IDE、私有仓库、Agent 改代码或完整 LSP。核心闭环是：
 
 ```text
-Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save note -> Jump back
+Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save Answer -> Jump back
 ```
 
 产品验证重点不是“功能很多”，而是用户是否会重复使用这条链路。
@@ -30,9 +30,11 @@ Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save no
 | Search / Preview | 全文搜索、结果预览、Open 后跳转 | Preview 不改变主阅读位置 |
 | Context Basket | selection / file / symbol / definition / search result chips | 发送前用户知道 AI 将看到什么 |
 | Chat / Agentic Reading | 围绕当前上下文提问，支持可追踪读码任务 | Agent 可读文件、搜索、查 symbol/definition/references，不改源码 |
-| Save Note | 将 AI 回答或整理内容保存为 Markdown note | 保存后仍停留在 Reader，并有 source anchor |
-| Anchor / Jump back | 从 note source chip 回到代码 | 高置信自动跳转；低置信展示候选 |
-| Daily Report draft | 基于阅读行为生成统计型日报草稿 | 不依赖大模型也可生成基础日报 |
+| Save Answer | 将 AI 回答保存为 SavedAnswer，关联 Context Basket chip 和 source anchor | 保存后仍停留在 Reader，并有 source anchor |
+| Annotate Code | 对当前行、函数或选区添加短批注 | 批注保存后 Reader 位置不变，gutter bookmark 可见 |
+| Study Note | 创建或追加整理型 NoteDocument | 可引用多个源码位置、AI 回答和批注 |
+| Anchor / Jump back | 从 source chip 回到代码 | 高置信自动跳转；低置信展示候选 |
+| Daily Report draft | 基于阅读行为生成统计型日报草稿 | P1，不作为 P0 保存闭环前置 |
 
 ### P1 可延后
 
@@ -40,6 +42,7 @@ Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save no
 - 多模型 profile。
 - 账号登录与同步。
 - 分享读码包。
+- Daily Report。
 - 知识卡片。
 - Android 原生壳。
 - 本地已 clone 仓库。
@@ -62,8 +65,8 @@ Open public repo -> Read code -> Add context -> Ask / Agentic Reading -> Save no
 2. 作为移动端读码用户，我想先预览搜索和定义结果，再决定是否跳转，以免丢失当前阅读位置。
 3. 作为学习者，我想知道 AI 本次看到了哪些文件、函数或选区，以便信任它的回答。
 4. 作为读码用户，我想让 Agent 根据当前函数追调用链、找下一步阅读文件，以便少走弯路。
-5. 作为长期学习者，我想把解释保存成笔记，并能从笔记跳回代码，以便复习。
-6. 作为碎片时间用户，我想看到今天读过什么、问过什么、保存了什么，以便形成持续学习反馈。
+5. 作为长期学习者，我想把解释保存成带 source anchor 的学习条目，并能从保存内容跳回代码，以便复习。
+6. 作为碎片时间用户，我想在需要时把多个回答、批注和源码位置整理成学习笔记，而不是被迫维护完整知识库。
 
 ## 4. 首次用户路径
 
@@ -77,7 +80,7 @@ Landing / Empty
   -> Search symbol
   -> Preview definition
   -> Explain definition
-  -> Save note
+  -> Save Answer
   -> Stay in Reader
 ```
 
@@ -88,7 +91,7 @@ Landing / Empty
 - 进入 Reader 后 5 秒内能找到 Search。
 - Search / Definition 默认 preview。
 - 从 Definition Peek 到 AI 解释不超过 4 次关键点击。
-- 保存 note 不离开 Reader。
+- Save Answer / Annotate 不离开 Reader。
 
 ## 5. Read -> Ask -> Save 验收清单
 
@@ -98,8 +101,9 @@ Landing / Empty
 | Add Context | Context chips 可见，可移除，可查看来源 |
 | Ask | Chat 能发送当前上下文问题，token 超限前置提示 |
 | Agentic Reading | ToolCallLog 可见，读码工具调用可追踪 |
-| Save | 保存为 Markdown note，保留 source anchor |
-| Jump back | 从 note 跳回代码；stale anchor 不乱跳 |
+| Save | 保存为 SavedAnswer，保留 source anchor |
+| Annotate | 添加短批注，Reader 不跳走 |
+| Jump back | 从 source chip 跳回代码；stale anchor 不乱跳 |
 
 ## 6. Context Basket 产品定义
 
@@ -118,7 +122,7 @@ MVP 支持的 context：
 - Search Preview 结果。
 - References 候选集合。
 - Reading Trail。
-- Note。
+- SavedAnswer / Annotation / NoteDocument。
 - Code Map node。
 - `#codebase` 检索意图。
 
@@ -141,8 +145,8 @@ Agentic Reading 是 Pocket Vibe 的差异点，不是普通 Chat。
 - Find next files to read。
 - Compare definition candidates。
 - Build context basket。
-- Create note draft。
-- Create daily report draft。
+- Create study note draft。
+- Create daily report draft（P1）。
 - Recover stale anchor。
 
 权限边界：
@@ -198,10 +202,10 @@ Agentic Reading 是 Pocket Vibe 的差异点，不是普通 Chat。
 - 首次 Search 使用率。
 - Definition/Search Preview 使用率。
 - Ask 发送率。
-- Save Note 转化率。
+- Save Answer 转化率。
 - 24 小时回访率。
 - 7 天内重复阅读天数。
-- 每用户保存 note / annotation / daily report 数量。
+- 每用户保存 SavedAnswer / Annotation / NoteDocument 数量。
 
 ## 11. 风险与缓解
 
@@ -211,7 +215,7 @@ Agentic Reading 是 Pocket Vibe 的差异点，不是普通 Chat。
 | Agent 变成普通聊天 | 明确定义 Agentic Reading 和 ToolCallLog |
 | 上下文不透明导致不信任 | Context Basket 显示发送内容 |
 | 搜索/语义不准 | preview before jump，confidence 明示 |
-| 保存笔记打断阅读 | Save Note 是轻动作，不离开 Reader |
+| 保存动作打断阅读 | Save Answer / Annotate 是轻动作，不离开 Reader |
 | 首批功能过大 | 严格限制 P0，不做私有仓库和改代码 |
 
 ## 12. 第一周产品工作

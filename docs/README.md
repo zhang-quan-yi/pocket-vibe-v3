@@ -2,6 +2,8 @@
 
 Pocket Vibe 是一款移动端 AI 源码阅读器，目标是在手机上完成真正可用的代码阅读、预览跳转、AI 解释和知识沉淀。
 
+当前知识沉淀的产品判断：Pocket Vibe 不做完整知识库前置，而是围绕源码 anchor 保存 AI 回答、代码旁批和整理型学习笔记，保证用户能从学习内容跳回源码。
+
 ## 当前文档入口
 
 - [MVP PRD](./POCKET_VIBE_MVP_PRD.md)
@@ -34,7 +36,7 @@ Open app
   -> select code
   -> add context
   -> ask mock chat
-  -> save note
+  -> Save Answer
   -> jump back to source
 ```
 

@@ -18,7 +18,7 @@ Public GitHub repo
   -> Search / Semantic-lite / Anchor
   -> Context Resolver
   -> Agent Orchestrator
-  -> Note / DailyReport
+  -> Save Answer / Annotation / NoteDocument
 ```
 
 ## 2. 系统上下文
@@ -58,7 +58,7 @@ flowchart LR
 | ReaderPayload | 消费 | 生成 |
 | Context Basket | 展示、编辑、发送前确认 | resolve、estimate、trim |
 | Agent | 展示 plan/tool/result | run lifecycle、ToolCallLog、tools |
-| Note | 编辑草稿 | 保存、anchor、查询 |
+| Knowledge | Save Answer / Annotate / Study Note UI | SavedAnswer、Annotation、NoteDocument、SourceReference 保存、anchor、查询 |
 | Anchor | 展示状态 | create / resolve / candidates |
 
 ## 4. Shared Schema / DTO 清单
@@ -82,8 +82,12 @@ flowchart LR
 - `ChatSession`
 - `AgentRun`
 - `ToolCallLog`
-- `Note`
-- `DailyReport`
+- `SourceReference`
+- `SavedAnswer`
+- `Annotation`
+- `NoteDocument`
+- `Notebook`
+- `DailyReport`（P1）
 - `CapabilityStatus`
 - `ApiError`
 
@@ -117,7 +121,10 @@ POST /context/resolve
 POST /chat/sessions
 POST /chat/sessions/:sessionId/messages
 GET  /agent-runs/:runId/events
-POST /notes
+POST /saved-answers
+POST /annotations
+POST /note-documents
+GET  /notebooks?projectId=
 POST /anchors/resolve
 ```
 
@@ -192,7 +199,7 @@ sequenceDiagram
 - `cleanup`
 - `anchorResolve`
 - `agentRun`
-- `dailyReport`
+- `dailyReport`（P1）
 
 状态：
 
@@ -237,7 +244,7 @@ Adapter 必须支持：
 | 数据 | 存储 |
 |---|---|
 | workspace/project/task | relational DB |
-| notes/chat/tool logs/anchors | relational DB |
+| saved answers / annotations / note documents / notebooks / chat / tool logs / anchors | relational DB |
 | repo files | filesystem or object storage |
 | index cache | filesystem / DB hybrid |
 | temporary snippets | TTL cache |
@@ -272,7 +279,7 @@ Adapter 必须支持：
 - ReaderPayload。
 - Anchor / ContextChip / ToolCallLog。
 - Agent protocol。
-- Note / ChatSession。
+- SavedAnswer / Annotation / NoteDocument / Notebook / ChatSession。
 
 原生端替换：
 
@@ -294,7 +301,7 @@ Adapter 必须支持：
 7. Anchor create / resolve。
 8. Context resolver。
 9. Agent runtime PoC。
-10. Notes / daily report。
+10. Save Answer / Annotation / NoteDocument。
 11. Android contract readiness。
 
 ## 13. Spike 清单
