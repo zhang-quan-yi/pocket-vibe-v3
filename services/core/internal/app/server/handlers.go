@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 
 	capabilitymod "pocket-vibe-v3/services/core/internal/modules/capability"
@@ -27,6 +28,8 @@ type Handlers struct {
 	Knowledge  knowledgemod.KnowledgeService
 	Capability capabilitymod.Service
 }
+
+var noteIDPattern = regexp.MustCompile(`^note_[a-z0-9]+$`)
 
 func (h *Handlers) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "mode": "mock"})
@@ -206,7 +209,7 @@ func (h *Handlers) handleNotes(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) handleNoteSubroutes(w http.ResponseWriter, r *http.Request) {
 	noteID := strings.TrimPrefix(r.URL.Path, "/notes/")
-	if noteID == "" || strings.Contains(noteID, "/") {
+	if noteID == "" || strings.Contains(noteID, "/") || !noteIDPattern.MatchString(noteID) {
 		writeRequestError(w, r, http.StatusNotFound, contract.ErrNotFound, "Unknown note route.")
 		return
 	}

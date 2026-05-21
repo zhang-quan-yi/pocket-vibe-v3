@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	filemod "pocket-vibe-v3/services/core/internal/modules/file"
 	"pocket-vibe-v3/services/core/internal/shared/contract"
@@ -71,7 +72,7 @@ func findFunctionEnd(startIdx int, lines []contract.CodeLine) int {
 	depth := 0
 	seenBrace := false
 	for i := startIdx; i < len(lines); i++ {
-		text := lines[i].Text
+		text := stripBraceNoise(lines[i].Text)
 		depth += strings.Count(text, "{")
 		if strings.Contains(text, "{") {
 			seenBrace = true
@@ -82,6 +83,91 @@ func findFunctionEnd(startIdx int, lines []contract.CodeLine) int {
 		}
 	}
 	return len(lines)
+}
+
+func stripBraceNoise(line string) string {
+	line = trimLineComment(line)
+	var builder strings.Builder
+	builder.Grow(len(line))
+
+	inSingle := false
+	inDouble := false
+	inTemplate := false
+	escaped := false
+
+	for len(line) > 0 {
+		r, size := utf8.DecodeRuneInString(line)
+		line = line[size:]
+
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch r {
+		case '\\':
+			if inSingle || inDouble || inTemplate {
+				escaped = true
+			}
+		case '\'':
+			if !inDouble && !inTemplate {
+				inSingle = !inSingle
+			}
+		case '"':
+			if !inSingle && !inTemplate {
+				inDouble = !inDouble
+			}
+		case '`':
+			if !inSingle && !inDouble {
+				inTemplate = !inTemplate
+			}
+		default:
+			if !inSingle && !inDouble && !inTemplate {
+				builder.WriteRune(r)
+			}
+		}
+	}
+
+	return builder.String()
+}
+
+func trimLineComment(line string) string {
+	inSingle := false
+	inDouble := false
+	inTemplate := false
+	escaped := false
+
+	for i := 0; i < len(line)-1; i++ {
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch line[i] {
+		case '\\':
+			if inSingle || inDouble || inTemplate {
+				escaped = true
+			}
+		case '\'':
+			if !inDouble && !inTemplate {
+				inSingle = !inSingle
+			}
+		case '"':
+			if !inSingle && !inTemplate {
+				inDouble = !inDouble
+			}
+		case '`':
+			if !inSingle && !inDouble {
+				inTemplate = !inTemplate
+			}
+		case '/':
+			if !inSingle && !inDouble && !inTemplate && line[i+1] == '/' {
+				return line[:i]
+			}
+		}
+	}
+
+	return line
 }
 
 func max(a int, b int) int {

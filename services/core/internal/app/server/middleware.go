@@ -42,7 +42,7 @@ func withTraceID(next http.Handler) http.Handler {
 }
 
 func newTraceID() string {
-	return "trace_" + strconv.FormatInt(time.Now().UnixNano(), 36) + strconv.FormatUint(traceCounter.Add(1), 36)
+	return "trace_" + strconv.FormatInt(time.Now().UnixNano(), 36) + "-" + strconv.FormatUint(traceCounter.Add(1), 36)
 }
 
 func traceIDFromContext(ctx context.Context) string {
