@@ -402,13 +402,15 @@ type ContextChipStatus =
 
 #### 6.9.4 Basket UI
 
-竖屏 Chat Half Sheet 中：
+Chat 视图中（顶部折叠）：
 
 ```text
-[Context]
+[Context Basket]
 [Current function resolveModule] [definition: resolver.ts:132] [+ Add]
-[Token estimate 3.2k / 16k] [Trim]
+[Token estimate 3.2k / 16k]
 ```
+
+上下文预览中（完整展示）：
 
 点击 chip 后展开：
 
@@ -511,12 +513,23 @@ Pocket Vibe 可借鉴 `@workspace` / `@terminal` / `@vscode` 的思想，但参�
 
 职责：
 
-- Chat half sheet / full sheet。
+- 全屏 Chat 视图。
 - 展示 Context Basket。
 - 展示快捷动作。
 - 展示 Agent plan / tool calls / streaming response。
 - 保存回答为 SavedAnswer。
 - 支持 cancel / retry / continue。
+
+视图切换：
+
+| 视图 | 展示内容 | 触发 |
+|---|---|---|
+| Chat 视图（默认） | Context Basket + Chat Messages + 输入框 | 打开 Chat |
+| 上下文预览 | Reader + Context Basket，隐藏 Chat 消息和输入框 | 点击"预览上下文" |
+
+- Chat 视图全屏展示消息区域，Context Basket 固定在顶部可折叠。
+- 上下文预览用于对照代码确认当前累积的上下文，不触发发送。
+- 预览中可添加/删除 chips，确认后切回 Chat 视图。
 
 模式：
 
@@ -708,22 +721,27 @@ sequenceDiagram
 
 ## 8. Responsive Layout
 
-### 8.1 Portrait
+### 8.1 Chat View（默认）
 
-- Reader occupies main screen.
-- Chat opens as bottom sheet.
-- Search opens as bottom sheet.
-- Context chips shown in compact row.
-- Tool Rail is visible handle / floating rail.
+- 全屏展示 Chat Messages 和输入框。
+- Context Basket 固定在顶部，默认折叠为 chips，可展开。
+- 用户点击"预览上下文"切换到上下文预览视图。
 
-### 8.2 Landscape
+### 8.2 Context Preview
 
-- Left 58% Reader.
-- Right 42% active panel: Chat / Search / Definition / References.
-- Context Basket can stay at top of right panel.
-- Keyboard state must keep Send / Save visible.
+- Reader 展示当前代码。
+- Context Basket 展示全部 chips，可添加/删除。
+- 不显示 Chat 消息和输入框。
+- 确认后切回 Chat 视图。
 
-### 8.3 Small Screens
+### 8.3 Landscape
+
+- 左 58% Reader。
+- 右 42% 活动面板：Chat / Search / Definition / References。
+- 上下文预览时右侧展示 Context Basket。
+- 键盘态必须保持 Send / Save 可见。
+
+### 8.4 Small Screens
 
 Must verify:
 
