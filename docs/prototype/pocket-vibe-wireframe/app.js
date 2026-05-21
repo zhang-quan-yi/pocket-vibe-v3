@@ -53,7 +53,7 @@ const screens = {
       "Tap token -> Symbol Menu",
       "Fold -> Reader Folded",
       "Tools -> Tool Rail",
-      "AI -> Chat Half Sheet"
+      "AI -> Chat Full Screen"
     ]
   },
   codeMap: {
@@ -91,7 +91,7 @@ const screens = {
       "The lens is a tooltip-like explanation anchored to the map node.",
       "Open Reader is the only action that leaves the map."
     ],
-    interactions: ["Open Reader -> Reader Default", "Explain -> Chat Half Sheet", "Show deps -> Module Zoom"]
+    interactions: ["Open Reader -> Reader Default", "Explain -> Chat Full Screen", "Show deps -> Module Zoom"]
   },
   folded: {
     id: "F-06",
@@ -126,7 +126,7 @@ const screens = {
     next: "reader",
     prev: "search",
     notes: ["Back returns to results with query preserved.", "Open is the commit point for reader navigation."],
-    interactions: ["Back to results -> Search Sheet", "Explain -> Chat Half Sheet", "Open -> Reader Default"]
+    interactions: ["Back to results -> Search Sheet", "Explain -> Chat Full Screen", "Open -> Reader Default"]
   },
   symbol: {
     id: "F-10",
@@ -135,7 +135,7 @@ const screens = {
     next: "definition",
     prev: "reader",
     notes: ["Triggered by a real token in the Reader.", "LSP actions are disabled or downgraded when indexing."],
-    interactions: ["Go to definition -> Definition Peek", "Find references -> References Panel", "Explain symbol -> Chat Half Sheet"]
+    interactions: ["Go to definition -> Definition Peek", "Find references -> References Panel", "Explain symbol -> Chat Full Screen"]
   },
   definition: {
     id: "F-11",
@@ -144,7 +144,7 @@ const screens = {
     next: "chat",
     prev: "symbol",
     notes: ["Primary action is Explain definition.", "Open is the only action that commits navigation."],
-    interactions: ["Explain definition -> Chat Half Sheet", "Open -> Reader Default", "Close -> Reader Default"]
+    interactions: ["Explain definition -> Chat Full Screen", "Open -> Reader Default", "Close -> Reader Default"]
   },
   references: {
     id: "F-12",
@@ -153,7 +153,7 @@ const screens = {
     next: "searchPreview",
     prev: "symbol",
     notes: ["References are heavier than definition peek, so the list is compact and preview-driven."],
-    interactions: ["Tap reference -> Search Preview", "Explain -> Chat Half Sheet"]
+    interactions: ["Tap reference -> Search Preview", "Explain -> Chat Full Screen"]
   },
   fileCards: {
     id: "F-13",
@@ -180,25 +180,30 @@ const screens = {
     next: "chat",
     prev: "reader",
     notes: ["Selection highlight must not hide syntax highlighting."],
-    interactions: ["Chat -> Chat Half Sheet", "Annotate -> Code Annotation", "Copy"]
+    interactions: ["Chat -> Chat Full Screen", "Annotate -> Code Annotation", "Copy"]
   },
   chat: {
     id: "F-16",
-    title: "Chat Half Sheet",
-    purpose: "Ask AI with code context while keeping selected code visible.",
+    title: "Chat Full Screen",
+    purpose: "Full-screen Chat with Context Basket, messages, and input.",
     next: "saveNote",
     prev: "definition",
-    notes: ["Uses a semantic textarea.", "Save note appears because the prototype shows a completed AI response."],
-    interactions: ["Send -> AI response", "Save note -> Save Note Tray", "Token warning -> Chat Token Limit"]
+    notes: [
+      "Chat uses full-screen layout, not a bottom sheet.",
+      "Context Basket is fixed at top, collapsible, showing kind + label chips.",
+      "Quick actions row below messages.",
+      "Save note appears after the AI response."
+    ],
+    interactions: ["Send -> AI response", "Save note -> Save Note Tray", "Back -> Reader Default", "Token warning -> Chat Token Limit", "Preview context -> Context Preview"]
   },
   tokenLimit: {
     id: "F-17",
     title: "Chat Token Limit",
-    purpose: "Prevent sending oversized context.",
+    purpose: "Prevent sending oversized context in full-screen Chat.",
     next: "chat",
     prev: "chat",
-    notes: ["Send is disabled until chips are removed or trimmed."],
-    interactions: ["Trim context -> Chat Half Sheet"]
+    notes: ["Send is disabled until chips are removed or trimmed.", "Token limit shown in Context Basket area."],
+    interactions: ["Trim context -> Chat Full Screen"]
   },
   saveNote: {
     id: "F-18",
@@ -207,7 +212,7 @@ const screens = {
     next: "saved",
     prev: "chat",
     notes: ["Save creates anchor and gutter bookmark.", "Save does not navigate to Notes List."],
-    interactions: ["Save -> Reader Saved Note Feedback", "Later -> Chat Half Sheet"]
+    interactions: ["Save -> Reader Saved Note Feedback", "Later -> Chat Full Screen"]
   },
   annotation: {
     id: "F-19",
@@ -269,6 +274,20 @@ const screens = {
     notes: ["Relink is explicit; never silently jump to low-confidence location."],
     interactions: ["Find candidates", "Relink manually"]
   },
+  chatPreview: {
+    id: "F-16P",
+    title: "Context Preview",
+    purpose: "Preview code alongside full Context Basket before sending.",
+    next: "chat",
+    prev: "chat",
+    notes: [
+      "Reader shows current code.",
+      "Context Basket shows all chips expanded.",
+      "No Chat messages or input.",
+      "Confirm -> back to Chat Full Screen."
+    ],
+    interactions: ["Confirm -> Chat Full Screen", "Add/remove chips", "Back -> Chat Full Screen"]
+  },
   landscape: {
     id: "F-26",
     title: "Landscape Reader + Chat",
@@ -324,6 +343,8 @@ const flowEdges = [
   ["selection", "chat", "add chat"],
   ["chat", "tokenLimit", "limit"],
   ["chat", "saveNote", "save note"],
+  ["chat", "chatPreview", "preview ctx"],
+  ["chatPreview", "chat", "confirm"],
   ["saveNote", "saved", "saved"],
   ["saved", "reader", "continue"],
   ["notes", "noteDetail", "open note"],
@@ -339,9 +360,10 @@ const flowLayout = {
   search: [500, 240], searchPreview: [700, 240], symbol: [930, 160],
   definition: [930, 300], references: [1130, 300], toolRail: [700, 440],
   fileCards: [480, 520], trail: [700, 600], selection: [900, 520],
-  chat: [1120, 520], tokenLimit: [1320, 520], saveNote: [1120, 680],
-  saved: [1320, 680], notes: [1120, 840], noteDetail: [1320, 840],
-  daily: [1120, 1000], annotation: [900, 680], repoList: [40, 240], stale: [1320, 1000]
+  chat: [1120, 520], tokenLimit: [1320, 520], chatPreview: [1120, 360],
+  saveNote: [1120, 680], saved: [1320, 680], notes: [1120, 840],
+  noteDetail: [1320, 840], daily: [1120, 1000], annotation: [900, 680],
+  repoList: [40, 240], stale: [1320, 1000]
 };
 
 let currentScreen = "empty";
@@ -758,24 +780,83 @@ function renderScreen(id) {
       <div class="selection-toolbar"><button data-go="chat">Chat</button><button data-go="annotation">Annotate</button><button>Copy</button></div>
     `,
     chat: () => html`
-      ${pathChrome()}${codeCanvas(16)}
-      <div class="context-marker">Current context remains visible above the sheet</div>
-      ${sheet("Chat", "chat", `
-        <div class="chips"><span class="ui-chip active">definition / resolveModule L38-L41</span><span class="ui-chip">~420 tok</span></div>
-        <div class="chips"><button class="ui-chip">Explain</button><button class="ui-chip">Next file</button><button class="ui-chip">Call chain</button></div>
-        <div class="card ai-card"><p><strong>AI response</strong></p><p>resolveModule checks the cache, asks the resolver for a candidate, and normalizes the result before returning it to the module graph.</p></div>
-        <div class="chat-input-row"><textarea class="chat-input" aria-label="Ask about this code">Ask about this code...</textarea><button class="mobile-primary send-button">Send</button></div>
-        <p class="hint">~1.2k tok / est. $0.01</p>
-        <div class="sheet-actions"><button class="mobile-secondary" data-go="tokenLimit">Token limit</button><button class="mobile-primary" data-go="saveNote">Save note</button></div>
-      `, "Definition context is attached. Save appears after the AI response.", "Half")}
+      <div class="chat-full">
+        <div class="chat-header">
+          <button class="chat-back" data-go="reader" aria-label="Back to reader">&larr; Back</button>
+          <h3>Chat</h3>
+          <button class="chat-back" data-go="chatPreview" aria-label="Preview context">Context</button>
+        </div>
+        <div class="chat-basket">
+          <div class="chat-basket-label"><span>Context Basket</span><span class="token-estimate">~1.2k tok</span></div>
+          <div class="chips">
+            <span class="ctx-chip"><span class="chip-kind">def</span><span class="chip-label">resolveModule L38-L41</span></span>
+            <span class="ctx-chip"><span class="chip-kind">file</span><span class="chip-label">core.ts</span></span>
+            <button class="basket-add" data-go="chatPreview" aria-label="Add context">+ Add</button>
+          </div>
+        </div>
+        <div class="chat-mode-tabs" role="tablist" aria-label="Chat modes">
+          <button class="active" aria-label="Ask mode">Ask</button><button aria-label="Agentic Reading mode">Agentic</button><button aria-label="Plan mode">Plan</button>
+        </div>
+        <div class="chat-messages">
+          <div class="chat-msg chat-msg-user"><div class="chat-bubble">Explain the definition of resolveModule</div></div>
+          <div class="chat-msg chat-msg-ai">
+            <div class="chat-bubble">resolveModule checks the cache, asks the resolver for a candidate, and normalizes the result before returning it to the module graph.</div>
+          </div>
+          <div class="chat-tool-log">
+            <div class="chat-tool-header"><span>ToolCallLog</span><span class="tool-status">Done</span></div>
+            <div class="chat-tool-body">find_definition: resolver/index.ts L38 / find_references: 12 refs in 5 files</div>
+          </div>
+        </div>
+        <div class="chat-quick-actions">
+          <button>Explain</button><button>Next file</button><button>Call chain</button>
+        </div>
+        <div class="chat-input-bar">
+          <textarea class="chat-textarea" aria-label="Ask about this code">Ask about this code...</textarea>
+          <button class="send-btn" aria-label="Send">Send</button>
+        </div>
+        <div class="chat-input-meta">
+          <span class="token-info">~1.2k tok / est. $0.01</span>
+          <span>Ask with context</span>
+        </div>
+        <div class="chat-save-bar">
+          <button class="mobile-secondary" data-go="tokenLimit">Token limit</button>
+          <button class="mobile-primary" data-go="saveNote">Save note</button>
+        </div>
+      </div>
     `,
     tokenLimit: () => html`
-      ${pathChrome()}${codeCanvas(12)}
-      ${sheet("Chat", "chat", `
-        <div class="chips"><span class="ui-chip">current file ~9k</span><span class="ui-chip active">function ~420</span><span class="ui-chip over-limit">references ~6k</span></div>
-        <div class="warning-box"><strong>Token limit exceeded</strong><br />Remove chips or trim context before sending.</div>
-        <div class="sheet-actions"><button class="mobile-primary" data-go="chat">Trim context</button><button class="mobile-secondary" disabled>Send disabled</button></div>
-      `, "Context exceeds model limit", "Half")}
+      <div class="chat-full">
+        <div class="chat-header">
+          <button class="chat-back" data-go="reader" aria-label="Back to reader">&larr; Back</button>
+          <h3>Chat</h3>
+          <button class="chat-back" data-go="chatPreview" aria-label="Preview context">Context</button>
+        </div>
+        <div class="chat-basket">
+          <div class="chat-basket-label"><span>Context Basket</span><span class="token-estimate" style="color:var(--danger)">Over limit</span></div>
+          <div class="chips">
+            <span class="ctx-chip"><span class="chip-kind">file</span><span class="chip-label">core.ts ~9k</span></span>
+            <span class="ctx-chip"><span class="chip-kind">def</span><span class="chip-label">resolveModule ~420</span></span>
+            <span class="ctx-chip over-limit"><span class="chip-kind">refs</span><span class="chip-label">references ~6k</span></span>
+          </div>
+        </div>
+        <div class="chat-mode-tabs" role="tablist" aria-label="Chat modes">
+          <button class="active" aria-label="Ask mode">Ask</button><button aria-label="Agentic Reading mode">Agentic</button><button aria-label="Plan mode">Plan</button>
+        </div>
+        <div class="chat-messages">
+          <div class="error-box" style="margin:16px"><strong>Token limit exceeded</strong><br />Remove chips or trim context before sending.</div>
+        </div>
+        <div class="chat-input-bar">
+          <textarea class="chat-textarea" aria-label="Ask about this code" disabled>Ask about this code...</textarea>
+          <button class="send-btn" disabled aria-label="Send disabled">Send</button>
+        </div>
+        <div class="chat-input-meta">
+          <span class="token-info" style="color:var(--danger)">~15.4k tok / limit exceeded</span>
+          <span>Send disabled</span>
+        </div>
+        <div class="chat-save-bar">
+          <button class="mobile-primary" data-go="chat">Trim context</button>
+        </div>
+      </div>
     `,
     saveNote: () => html`
       ${pathChrome()}${codeCanvas(12)}
@@ -783,7 +864,7 @@ function renderScreen(id) {
         <label for="note-title">Title</label>
         <input id="note-title" class="text-field" value="resolveModule explained" />
         <p><strong>Source</strong></p>
-        <span class="ui-chip active">resolver/index.ts / resolveModule L38-L41</span>
+        <span class="ctx-chip anchor-chip"><span class="chip-kind">src</span><span class="chip-label">resolver/index.ts / resolveModule L38-L41</span></span>
         <p class="hint">This function resolves a module specifier, checks cache, and normalizes the result...</p>
         <div class="sheet-actions"><button class="mobile-secondary" data-go="chat">Later</button><button class="mobile-primary" data-go="saved">Save</button></div>
       `, "AI answer linked to source anchor", "Peek")}
@@ -816,7 +897,7 @@ function renderScreen(id) {
       ${mobileHeader("Note", "Edit")}
       <div class="mobile-body stack">
         <h3>resolveModule explained</h3>
-        <button class="ui-chip active source-chip" data-go="reader">resolver/index.ts / resolveModule L38-L41</button>
+        <button class="ctx-chip anchor-chip" data-go="reader"><span class="chip-kind">src</span><span class="chip-label">resolver/index.ts / resolveModule L38-L41</span></button>
         <h4>Summary</h4>
         <p>This function resolves a module specifier, checks cache, then normalizes the resolver output before returning it to the module graph.</p>
         <h4>My understanding</h4>
@@ -849,6 +930,23 @@ function renderScreen(id) {
         <button class="mobile-primary">Relink manually</button>
       </div>
     `,
+    chatPreview: () => html`
+      ${pathChrome()}${codeCanvas(24)}
+      <div class="bottom-sheet peek" role="dialog" aria-label="Context preview">
+        <button class="sheet-close" data-go="chat" aria-label="Close preview">Close</button>
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <h3>Context Preview</h3>
+        <p class="sub">All context that will be sent. Add or remove chips.</p>
+        <div class="chips">
+          <span class="ctx-chip"><span class="chip-kind">def</span><span class="chip-label">resolveModule L38-L41</span></span>
+          <span class="ctx-chip"><span class="chip-kind">file</span><span class="chip-label">core.ts</span></span>
+          <span class="ctx-chip anchor-chip"><span class="chip-kind">saved</span><span class="chip-label">previous note</span></span>
+          <button class="basket-add">+ Add</button>
+        </div>
+        <div class="chat-basket-label"><span>Token estimate</span><span class="token-estimate">~1.2k tok</span></div>
+        <div class="sheet-actions"><button class="mobile-primary" data-go="chat">Confirm</button></div>
+      </div>
+    `,
     landscape: () => html`
       <div class="landscape-frame">
         <section class="landscape-code">
@@ -857,12 +955,22 @@ function renderScreen(id) {
         </section>
         <section class="landscape-panel">
           <h3>Chat / Results Panel</h3>
-          <span class="ui-chip active">resolveModule L128-L142</span>
-          <div class="card"><p>Right side hosts Chat, Search, LSP, or References one at a time. It is fully visible in the landscape frame.</p></div>
+          <div class="chips">
+            <span class="ctx-chip"><span class="chip-kind">sel</span><span class="chip-label">resolveModule L128-L142</span></span>
+            <span class="ctx-chip"><span class="chip-kind">file</span><span class="chip-label">core.ts</span></span>
+          </div>
+          <div class="chat-mode-tabs">
+            <button class="active">Ask</button><button>Agentic</button><button>Plan</button>
+          </div>
+          <div class="card"><p>resolveModule checks the cache, asks the resolver for a candidate, and normalizes the result.</p></div>
+          <div class="chat-input-bar">
+            <textarea class="chat-textarea" aria-label="Ask">Ask about code...</textarea>
+            <button class="send-btn">Send</button>
+          </div>
           <button class="mobile-primary" data-go="reader">Exit landscape</button>
         </section>
       </div>
-    `
+    `,
   };
 
   phoneScreen.innerHTML = renderers[id] ? renderers[id]() : renderers.reader();
@@ -965,7 +1073,7 @@ function miniScreen(id) {
     codeMapModule: codeMapModuleZoom(),
     codeMapNode: codeMapNodeLens(),
     reader: `${pathChrome()}${codeCanvas(18)}`,
-    chat: `${pathChrome()}${codeCanvas(8)}${sheet("Chat", "chat", `<div class="chips"><span class="ui-chip active">context chip</span></div><div class="card"><p>AI response</p></div>`)}`,
+    chat: `<div class="chat-full"><div class="chat-header"><h3>Chat</h3></div><div class="chat-basket"><div class="chips"><span class="ctx-chip"><span class="chip-kind">def</span><span class="chip-label">context</span></span></div></div><div class="chat-messages"><div class="chat-msg chat-msg-ai"><div class="chat-bubble">AI response</div></div></div><div class="chat-input-bar"><textarea class="chat-textarea">Ask...</textarea><button class="send-btn">Send</button></div></div>`,
     search: `${pathChrome()}${codeCanvas(8)}${sheet("Search", "search", `<input class="text-field" value="query" /><div class="stack">${resultRow("result.ts", "line 128")}</div>`)}`,
     definition: `${pathChrome()}${codeCanvas(8)}${sheet("Definition", "peek", `<div class="snippet">function resolveModule()</div>`)}`,
     saved: `${pathChrome()}${codeCanvas(12, { bookmark: true })}<div class="snackbar">Saved to notes</div>`,
@@ -983,7 +1091,8 @@ function renderAnnotations() {
     ["AI as Route", "Guide cards use next/prev over map nodes, keeping chat as secondary ask mode."],
     ["Jump / Ask / Save", "Tap token or search, preview first, explain, then save without leaving the reader."],
     ["Preview Before Jump", "Search and LSP use preview first. Only Open changes reader and trail."],
-    ["Chat Avoids Code", "Chat uses a semantic textarea and keeps selected context visible above the sheet."],
+    ["Chat Full Screen", "Chat is a full-screen view with Context Basket at top, messages, quick actions, and input bar."],
+    ["Context Visible", "Context Basket shows kind + label chips (def, file, sel, refs). Users preview before sending."],
     ["State Honesty", "LSP indexing and anchor stale states must never pretend to be accurate."],
     ["Anchor Recovery", "Saved notes show snackbar and gutter bookmark; stale source requires explicit relink."]
   ];
@@ -997,7 +1106,7 @@ function renderComponents() {
     ["Code Map", ["Overview layer", "Module zoom", "Node lens", "Map controls", "Mini map", "Guide card"]],
     ["Code Reader", ["Scrollable code line", "Clickable token", "Fold block", "Gutter bookmark", "Selection toolbar"]],
     ["Semantic Navigation", ["Symbol menu", "Definition peek", "Result row", "Reference group", "Preview snippet"]],
-    ["Chat and Knowledge", ["Chat FAB", "Context chip", "Token cost bar", "Save note tray", "Snackbar"]],
+    ["Chat and Knowledge", ["Chat Full Screen", "Context Basket (kind + label chips)", "Token estimate bar", "Save Answer Tray", "Snackbar"]],
     ["Edge States", ["LSP ready/indexing/failed", "Online/offline", "Anchor resolved/stale", "Token ok/blocked", "Clone progress/failed"]]
   ];
   root.innerHTML = items.map(item => `<article class="component-card"><h4>${item[0]}</h4><ul>${item[1].map(x => `<li>${x}</li>`).join("")}</ul></article>`).join("");
