@@ -84,9 +84,12 @@ function render(): void {
   app.innerHTML = `
     <main class="app-shell">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Mock walking skeleton</p>
-          <h1>Pocket Vibe</h1>
+        <div class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">PV</span>
+          <div>
+            <p class="eyebrow">Reader-first skeleton</p>
+            <h1>Pocket Vibe</h1>
+          </div>
         </div>
         <span class="status-pill">${escapeHTML(state.status)}</span>
       </header>
@@ -179,20 +182,20 @@ function renderContextPanel(): string {
   const chips = state.contextChips
     .map(
       (chip) => `
-        <button class="chip" data-action="remove-chip" data-chip-id="${escapeHTML(chip.id)}">
-          <span>${escapeHTML(chip.kind)}</span>
-          ${escapeHTML(chip.label)}
+        <button class="context-chip" data-action="remove-chip" data-chip-id="${escapeHTML(chip.id)}">
+          <span class="chip-kind">${escapeHTML(chip.kind)}</span>
+          <span class="chip-label">${escapeHTML(chip.label)}</span>
         </button>
       `,
     )
     .join("");
 
   const resolved = state.resolvedContext
-    ? `<p class="meta">Estimated ${state.resolvedContext.estimatedToken} tokens. ${state.resolvedContext.warnings.join(" ")}</p>`
+    ? `<p class="meta">Estimated ${state.resolvedContext.estimatedToken} tokens. ${escapeHTML(state.resolvedContext.warnings.join(" "))}</p>`
     : `<p class="meta">Select lines and add context before asking.</p>`;
 
   return `
-    <section class="panel" aria-label="Context basket">
+    <section class="panel context-panel" aria-label="Context basket">
       <div class="panel-head">
         <div>
           <p class="eyebrow">Add context</p>
@@ -209,13 +212,13 @@ function renderContextPanel(): string {
 function renderChatPanel(): string {
   const toolLog = state.toolLog.map((item) => `<li>${escapeHTML(item)}</li>`).join("");
   return `
-    <section class="panel" aria-label="Ask AI">
+    <section class="panel chat-panel" aria-label="Ask AI">
       <div class="panel-head">
         <div>
           <p class="eyebrow">Ask</p>
           <h2>Mock Agentic Reading</h2>
         </div>
-        <span class="mini-state">${state.isChatRunning ? "Running" : "Idle"}</span>
+        <span class="mini-state ${state.isChatRunning ? "running" : ""}">${state.isChatRunning ? "Running" : "Idle"}</span>
       </div>
       <textarea data-role="question-input" aria-label="Ask about this code">${escapeHTML(state.question)}</textarea>
       <button class="primary-action wide" data-action="ask" ${state.contextChips.length ? "" : "disabled"}>
@@ -225,7 +228,7 @@ function renderChatPanel(): string {
         <strong>ToolCallLog</strong>
         <ul>${toolLog || "<li>No tool calls yet.</li>"}</ul>
       </div>
-      <article class="answer">
+      <article class="answer ${state.answer ? "" : "empty"}">
         ${state.answer ? escapeHTML(state.answer) : "The mock answer will stream here."}
       </article>
     </section>
@@ -245,7 +248,7 @@ function renderNotePanel(): string {
     : `<p class="meta">Save appears after the mock answer completes.</p>`;
 
   return `
-    <section class="panel" aria-label="Save note">
+    <section class="panel note-panel" aria-label="Save note">
       <div class="panel-head">
         <div>
           <p class="eyebrow">Save</p>
@@ -266,7 +269,7 @@ function bindEvents(): void {
       if (action === "use-suggested") useSuggestedRange();
       if (action === "select-line") selectLine(Number(element.dataset.line));
       if (action === "add-context") void addContext();
-      if (action === "remove-chip") removeChip(element.dataset.chipId ?? "");
+      if (action === "remove-chip") void removeChip(element.dataset.chipId ?? "");
       if (action === "ask") void ask();
       if (action === "save-note") void persistNote();
       if (action === "jump-note") jumpToSavedNote();
@@ -339,9 +342,14 @@ async function addContext(): Promise<void> {
   render();
 }
 
-function removeChip(chipId: string): void {
+async function removeChip(chipId: string): Promise<void> {
   state.contextChips = state.contextChips.filter((chip) => chip.id !== chipId);
-  state.status = "Context chip removed.";
+  try {
+    state.resolvedContext = state.contextChips.length ? await resolveContext(state.contextChips) : null;
+    state.status = "Context chip removed.";
+  } catch (error) {
+    state.error = getErrorMessage(error);
+  }
   render();
 }
 

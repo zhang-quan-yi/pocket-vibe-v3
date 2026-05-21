@@ -136,7 +136,7 @@ flowchart LR
 - Client Store
 - API / Streaming Client
 
-其中 Context Basket 是前端核心模块之一，应参考 VS Code Copilot Chat / `vscode-copilot-chat` 的显式上下文、`#file`、`#selection`、`#codebase`、participants 和 slash commands，但转译为移动读码场景。
+其中 Context Basket 应参考 VS Code Copilot Chat / `vscode-copilot-chat` 的显式上下文、`#file`、`#selection`、`#codebase`、participants 和 slash commands，但转译为移动读码场景。
 
 ### 6.2 后端模块概览
 
