@@ -30,7 +30,7 @@ export function renderChatPanel(props: ChatPanelProps): string {
       </button>
       <div class="tool-log">
         <strong>ToolCallLog</strong>
-        <ul>${toolLogItems || "<li>No tool calls yet.</li>"}</ul>
+        <ul aria-label="Tool execution log">${toolLogItems || "<li>No tool calls yet.</li>"}</ul>
       </div>
       <article class="answer ${answer ? "" : "empty"}">
         ${answer ? escapeHTML(answer) : "The mock answer will stream here."}

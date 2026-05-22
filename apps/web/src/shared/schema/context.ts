@@ -18,7 +18,7 @@ export type ContextChip = {
   kind: ContextChipKind;
   label: string;
   summary: string;
-  range: SourceRange;
+  range?: SourceRange;
 };
 
 export type ResolvedContext = {

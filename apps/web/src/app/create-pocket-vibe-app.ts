@@ -165,7 +165,7 @@ export function createPocketVibeApp(appRoot: HTMLDivElement): void {
     if (!state.answer) return;
 
     try {
-      const anchors = state.contextChips.map((chip) => chip.range);
+      const anchors = state.contextChips.flatMap((chip) => (chip.range ? [chip.range] : []));
       state.savedNote = await saveNote("Context basket explanation", state.answer, anchors);
       state.status = "Saved note without leaving the reader.";
       state.error = null;
