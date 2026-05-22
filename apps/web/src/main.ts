@@ -7,6 +7,21 @@ import {
   saveNote,
   search,
 } from "./api";
+import {
+  escapeHTML,
+  renderAnswerCard,
+  renderCodeLineButton,
+  renderContextChipPill,
+  renderEmptyReaderState,
+  renderPanelHeader,
+  renderReaderHeader,
+  renderSavedNoteCard,
+  renderSearchBar,
+  renderSearchResultItem,
+  renderToolCallLog,
+  renderTopBar,
+  renderWorkspaceBand,
+} from "./components";
 import "./styles.css";
 import type {
   ChatSession,
@@ -83,26 +98,20 @@ async function boot(): Promise<void> {
 function render(): void {
   app.innerHTML = `
     <main class="app-shell">
-      <header class="topbar">
-        <div class="brand-lockup">
-          <span class="brand-mark" aria-hidden="true">PV</span>
-          <div>
-            <p class="eyebrow">Reader-first skeleton</p>
-            <h1>Pocket Vibe</h1>
-          </div>
-        </div>
-        <span class="status-pill">${escapeHTML(state.status)}</span>
-      </header>
+      ${renderTopBar({
+        eyebrow: "Reader-first skeleton",
+        title: "Pocket Vibe",
+        status: state.status,
+      })}
 
       ${state.error ? `<div class="error-banner">${escapeHTML(state.error)}</div>` : ""}
 
-      <section class="workspace-band" aria-label="Repository">
-        <div>
-          <h2>Repo</h2>
-          <p>${escapeHTML(state.activeRepo?.description ?? "Choose a mock repo to start the shortest engineering path.")}</p>
-        </div>
-        <button class="primary-action" data-action="open-repo">${state.reader ? "Reload mock repo" : "Choose mock repo"}</button>
-      </section>
+      ${renderWorkspaceBand({
+        title: "Repo",
+        description: state.activeRepo?.description ?? "Choose a mock repo to start the shortest engineering path.",
+        actionLabel: state.reader ? "Reload mock repo" : "Choose mock repo",
+        action: "open-repo",
+      })}
 
       <section class="workbench" aria-label="Reader workbench">
         <div class="reader-pane">
@@ -122,39 +131,40 @@ function render(): void {
 
 function renderReader(): string {
   if (!state.reader) {
-    return `
-      <div class="empty-reader">
-        <p class="eyebrow">Read</p>
-        <h2>No file open</h2>
-        <p>Open the mock repo to load a reader payload from the Go API.</p>
-      </div>
-    `;
+    return renderEmptyReaderState({
+      eyebrow: "Read",
+      title: "No file open",
+      description: "Open the mock repo to load a reader payload from the Go API.",
+    });
   }
 
   const searchResults = state.searchResults
     .map(
-      (result) => `
-        <button class="search-result" data-action="jump-search" data-line="${result.line}">
-          <span>${escapeHTML(result.filePath)}:${result.line}</span>
-          <code>${escapeHTML(result.preview)}</code>
-        </button>
-      `,
+      (result) =>
+        renderSearchResultItem({
+          filePath: result.filePath,
+          line: result.line,
+          preview: result.preview,
+          action: "jump-search",
+        }),
     )
     .join("");
 
   return `
-    <div class="reader-header">
-      <div>
-        <p class="eyebrow">${escapeHTML(state.reader.language)}</p>
-        <h2>${escapeHTML(state.reader.filePath)}</h2>
-      </div>
-      <button class="secondary-action" data-action="use-suggested">Use suggested range</button>
-    </div>
+    ${renderReaderHeader({
+      eyebrow: state.reader.language,
+      title: state.reader.filePath,
+      actionLabel: "Use suggested range",
+      action: "use-suggested",
+    })}
 
-    <div class="search-row">
-      <input aria-label="Search code" value="${escapeHTML(state.searchQuery)}" data-role="search-input" />
-      <button class="secondary-action" data-action="search">Search</button>
-    </div>
+    ${renderSearchBar({
+      value: state.searchQuery,
+      inputRole: "search-input",
+      inputAriaLabel: "Search code",
+      actionLabel: "Search",
+      action: "search",
+    })}
     ${searchResults ? `<div class="search-results">${searchResults}</div>` : ""}
 
     <div class="code-reader" aria-label="Read-only source code">
@@ -164,29 +174,25 @@ function renderReader(): string {
 }
 
 function renderCodeLine(line: { number: number; text: string }): string {
-  const isSelected = isLineInRange(line.number, state.selectedRange);
-  const isHighlighted = line.number === state.highlightedLine;
-  const className = ["code-line", isSelected ? "selected" : "", isHighlighted ? "highlighted" : ""]
-    .filter(Boolean)
-    .join(" ");
-
-  return `
-    <button class="${className}" data-action="select-line" data-line="${line.number}">
-      <span class="line-no">${line.number}</span>
-      <code>${escapeHTML(line.text || " ")}</code>
-    </button>
-  `;
+  return renderCodeLineButton({
+    lineNumber: line.number,
+    text: line.text,
+    isSelected: isLineInRange(line.number, state.selectedRange),
+    isHighlighted: line.number === state.highlightedLine,
+    action: "select-line",
+  });
 }
 
 function renderContextPanel(): string {
   const chips = state.contextChips
     .map(
-      (chip) => `
-        <button class="context-chip" data-action="remove-chip" data-chip-id="${escapeHTML(chip.id)}">
-          <span class="chip-kind">${escapeHTML(chip.kind)}</span>
-          <span class="chip-label">${escapeHTML(chip.label)}</span>
-        </button>
-      `,
+      (chip) =>
+        renderContextChipPill({
+          id: chip.id,
+          kind: chip.kind,
+          label: chip.label,
+          action: "remove-chip",
+        }),
     )
     .join("");
 
@@ -196,13 +202,13 @@ function renderContextPanel(): string {
 
   return `
     <section class="panel context-panel" aria-label="Context basket">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Add context</p>
-          <h2>Context Basket</h2>
-        </div>
-        <button class="secondary-action" data-action="add-context" ${state.selectedRange ? "" : "disabled"}>Add</button>
-      </div>
+      ${renderPanelHeader({
+        eyebrow: "Add context",
+        title: "Context Basket",
+        actionLabel: "Add",
+        action: "add-context",
+        actionDisabled: !state.selectedRange,
+      })}
       <div class="chip-row">${chips || `<span class="muted">No context yet.</span>`}</div>
       ${resolved}
     </section>
@@ -210,27 +216,26 @@ function renderContextPanel(): string {
 }
 
 function renderChatPanel(): string {
-  const toolLog = state.toolLog.map((item) => `<li>${escapeHTML(item)}</li>`).join("");
   return `
     <section class="panel chat-panel" aria-label="Ask AI">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Ask</p>
-          <h2>Mock Agentic Reading</h2>
-        </div>
-        <span class="mini-state ${state.isChatRunning ? "running" : ""}">${state.isChatRunning ? "Running" : "Idle"}</span>
-      </div>
+      ${renderPanelHeader({
+        eyebrow: "Ask",
+        title: "Mock Agentic Reading",
+        trailingContent: `<span class="mini-state ${state.isChatRunning ? "running" : ""}">${state.isChatRunning ? "Running" : "Idle"}</span>`,
+      })}
       <textarea data-role="question-input" aria-label="Ask about this code">${escapeHTML(state.question)}</textarea>
       <button class="primary-action wide" data-action="ask" ${state.contextChips.length ? "" : "disabled"}>
         Ask with context
       </button>
-      <div class="tool-log">
-        <strong>ToolCallLog</strong>
-        <ul>${toolLog || "<li>No tool calls yet.</li>"}</ul>
-      </div>
-      <article class="answer ${state.answer ? "" : "empty"}">
-        ${state.answer ? escapeHTML(state.answer) : "The mock answer will stream here."}
-      </article>
+      ${renderToolCallLog({
+        title: "ToolCallLog",
+        items: state.toolLog,
+        emptyText: "No tool calls yet.",
+      })}
+      ${renderAnswerCard({
+        answer: state.answer,
+        emptyText: "The mock answer will stream here.",
+      })}
     </section>
   `;
 }
@@ -238,24 +243,23 @@ function renderChatPanel(): string {
 function renderNotePanel(): string {
   const canSave = Boolean(state.answer && !state.isChatRunning);
   const note = state.savedNote
-    ? `
-      <div class="saved-note">
-        <strong>${escapeHTML(state.savedNote.title)}</strong>
-        <p>${escapeHTML(state.savedNote.body.slice(0, 120))}${state.savedNote.body.length > 120 ? "..." : ""}</p>
-        <button class="secondary-action" data-action="jump-note">Jump back to source</button>
-      </div>
-    `
+    ? renderSavedNoteCard({
+        title: state.savedNote.title,
+        bodyPreview: `${state.savedNote.body.slice(0, 120)}${state.savedNote.body.length > 120 ? "..." : ""}`,
+        actionLabel: "Jump back to source",
+        action: "jump-note",
+      })
     : `<p class="meta">Save appears after the mock answer completes.</p>`;
 
   return `
     <section class="panel note-panel" aria-label="Save note">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Save</p>
-          <h2>Note</h2>
-        </div>
-        <button class="secondary-action" data-action="save-note" ${canSave ? "" : "disabled"}>Save</button>
-      </div>
+      ${renderPanelHeader({
+        eyebrow: "Save",
+        title: "Note",
+        actionLabel: "Save",
+        action: "save-note",
+        actionDisabled: !canSave,
+      })}
       ${note}
     </section>
   `;
@@ -429,19 +433,6 @@ function jumpToLine(line: number): void {
 
 function isLineInRange(line: number, range: SourceRange | null): boolean {
   return Boolean(range && line >= range.startLine && line <= range.endLine);
-}
-
-function escapeHTML(value: string): string {
-  return value.replace(/[&<>"']/g, (char) => {
-    const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    };
-    return entities[char] ?? char;
-  });
 }
 
 function getErrorMessage(error: unknown): string {
