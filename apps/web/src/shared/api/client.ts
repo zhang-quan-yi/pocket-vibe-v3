@@ -7,7 +7,7 @@ import type {
   ResolvedContext,
   SearchResult,
   SourceRange,
-} from "./types";
+} from "../schema";
 
 const fallbackApiBase = "http://localhost:8080";
 
