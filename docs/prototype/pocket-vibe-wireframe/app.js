@@ -1101,15 +1101,176 @@ function renderAnnotations() {
 
 function renderComponents() {
   const root = document.getElementById("componentList");
-  const items = [
-    ["App Shell", ["Top path bar", "Sticky function bar", "Visible tool handle", "Bottom sheet", "Landscape frame"]],
-    ["Code Map", ["Overview layer", "Module zoom", "Node lens", "Map controls", "Mini map", "Guide card"]],
-    ["Code Reader", ["Scrollable code line", "Clickable token", "Fold block", "Gutter bookmark", "Selection toolbar"]],
-    ["Semantic Navigation", ["Symbol menu", "Definition peek", "Result row", "Reference group", "Preview snippet"]],
-    ["Chat and Knowledge", ["Chat Full Screen", "Context Basket (kind + label chips)", "Token estimate bar", "Save Answer Tray", "Snackbar"]],
-    ["Edge States", ["LSP ready/indexing/failed", "Online/offline", "Anchor resolved/stale", "Token ok/blocked", "Clone progress/failed"]]
+  const layers = [
+    ["Primitive", "ActionButton / TextField / StatusPill / InlineNotice"],
+    ["Layout", "Panel / BottomSheet / App and Workbench surfaces"],
+    ["Reader", "CodeLine / SourceAnchorBadge / SearchResultItem"],
+    ["Context", "ContextChip / TokenMeter / Context Basket preview"],
+    ["Agent", "ChatPanel / ToolCallLog / mode tabs"],
+    ["Knowledge", "SaveAnswerTray / ReadingTrailCard / anchored note"]
   ];
-  root.innerHTML = items.map(item => `<article class="component-card"><h4>${item[0]}</h4><ul>${item[1].map(x => `<li>${x}</li>`).join("")}</ul></article>`).join("");
+  const productComponents = [
+    ["CodeLine", "Read-only source row with line number, selection, current line, and anchor state."],
+    ["ContextChip", "Visible AI context unit; always shows kind, label, and status text."],
+    ["SourceAnchorBadge", "Source reference for saved answers, annotations, and jump-back paths."],
+    ["SearchResultItem", "Preview-first row with file, line, snippet, Explain, and Open affordances."],
+    ["DefinitionPeek", "Short lived semantic preview; Open is the only navigation commit."],
+    ["ToolCallLog", "Inspectable agent work, collapsed by default but never hidden."],
+    ["SaveAnswerTray", "Anchored note save surface that keeps the Reader position intact."],
+    ["ReadingTrailCard", "Compact file/session card that can re-enter source context."]
+  ];
+
+  root.innerHTML = html`
+    <article class="component-card wide component-intro-card">
+      <div>
+        <p class="eyebrow">Base component direction</p>
+        <h4>Reader-first components for the MVP prototype</h4>
+        <p>These examples make the low-level design language explicit before the walking skeleton grows into a larger UI kit.</p>
+      </div>
+      <div class="component-layer-strip">
+        ${layers.map(([name, desc]) => `<span><strong>${name}</strong>${desc}</span>`).join("")}
+      </div>
+    </article>
+
+    <article class="component-card wide">
+      <h4>Foundation Tokens</h4>
+      <p>Light, cool-neutral app chrome; dark Reader canvas; teal actions; blue context; amber source anchors; direct status colors.</p>
+      <div class="token-board">
+        <div class="token-swatch bg"><span>Background</span><strong>#eef2f7</strong></div>
+        <div class="token-swatch surface"><span>Surface</span><strong>#ffffff</strong></div>
+        <div class="token-swatch reader"><span>Reader</span><strong>#171717</strong></div>
+        <div class="token-swatch accent"><span>Accent</span><strong>#167a72</strong></div>
+        <div class="token-swatch context"><span>Context</span><strong>#2f6fed</strong></div>
+        <div class="token-swatch anchor"><span>Anchor</span><strong>#b76b00</strong></div>
+        <div class="token-swatch danger"><span>Danger</span><strong>#b42318</strong></div>
+      </div>
+      <div class="component-note-row">
+        <span>Radius: 6px controls / 8px repeated items</span>
+        <span>Motion: 120ms, 180ms, 240ms</span>
+        <span>Minimum touch target: 44px</span>
+      </div>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>ActionButton</h4>
+        <span class="component-tag">primitive</span>
+      </div>
+      <div class="sample-stack">
+        <button class="pv-button primary">Ask with context</button>
+        <button class="pv-button secondary">Preview context</button>
+        <button class="pv-button quiet">Later</button>
+        <button class="pv-button danger">Remove chip</button>
+        <button class="pv-button secondary" disabled>Send disabled</button>
+      </div>
+      <p>Use primary sparingly for the next committed action. Quiet actions stay visible without stealing Reader focus.</p>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>Fields</h4>
+        <span class="component-tag">primitive</span>
+      </div>
+      <div class="sample-stack">
+        <label class="component-label" for="component-search">Search code</label>
+        <input id="component-search" class="component-input" value="resolveModule" />
+        <label class="component-label" for="component-question">Question</label>
+        <textarea id="component-question" class="component-textarea">Explain how this function recovers from missing resolver candidates.</textarea>
+      </div>
+      <p>Fields are compact, readable, and never imply source editing.</p>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>StatusPill</h4>
+        <span class="component-tag">primitive</span>
+      </div>
+      <div class="component-pill-grid">
+        <span class="component-pill success">Ready</span>
+        <span class="component-pill running">Running</span>
+        <span class="component-pill warning">Indexing</span>
+        <span class="component-pill danger">Failed</span>
+        <span class="component-pill neutral">Offline read-only</span>
+      </div>
+      <p>Status text is explicit; color is secondary reinforcement.</p>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>InlineNotice</h4>
+        <span class="component-tag">primitive</span>
+      </div>
+      <div class="sample-stack">
+        <div class="component-notice info"><strong>Context visible</strong><span>2 chips will be sent with this ask.</span></div>
+        <div class="component-notice warning"><strong>Indexing</strong><span>Definition is unavailable; candidate search is still available.</span></div>
+        <div class="component-notice danger"><strong>Token limit</strong><span>Trim references before sending.</span></div>
+      </div>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>Panel</h4>
+        <span class="component-tag">layout</span>
+      </div>
+      <div class="component-panel-sample">
+        <div class="component-panel-head"><span>Context Basket</span><button class="pv-button quiet">Add</button></div>
+        <div class="chips">
+          <span class="ctx-chip"><span class="chip-kind">sel</span><span class="chip-label">resolveModule L128-L142</span></span>
+          <span class="ctx-chip anchor-chip"><span class="chip-kind">src</span><span class="chip-label">core.ts</span></span>
+        </div>
+        <div class="token-meter"><span style="width:42%"></span></div>
+        <p class="hint">~1.2k tok / 16k budget</p>
+      </div>
+      <p>Panels are temporary work surfaces with light borders and clear titles.</p>
+    </article>
+
+    <article class="component-card">
+      <div class="component-card-head">
+        <h4>BottomSheet</h4>
+        <span class="component-tag">layout</span>
+      </div>
+      <div class="component-sheet-sample">
+        <div class="sheet-handle" aria-hidden="true"></div>
+        <span class="snap-label">Half</span>
+        <button class="sheet-close">Close</button>
+        <h5>Definition Peek</h5>
+        <p>Preview definition before navigation.</p>
+        <div class="snippet">function resolveModule(specifier, parent) { ... }</div>
+        <div class="sheet-actions"><button class="mobile-secondary">Open</button><button class="mobile-primary">Explain</button></div>
+      </div>
+    </article>
+
+    <article class="component-card wide">
+      <h4>Reader and Context Product Components</h4>
+      <div class="component-showcase-grid">
+        <div class="reader-sample">
+          <div class="code-line selected"><span class="line-no">128</span><code>function resolveModule(specifier, parent) {</code></div>
+          <div class="code-line"><span class="line-no">129</span><code>  const cacheKey = createKey(specifier, parent.scope);</code></div>
+          <div class="code-line highlighted"><span class="line-no">130</span><code>  return normalizeResult(candidate);</code></div>
+        </div>
+        <div class="sample-stack">
+          <div class="chips">
+            <span class="ctx-chip"><span class="chip-kind">sel</span><span class="chip-label">selection ready</span></span>
+            <span class="ctx-chip over-limit"><span class="chip-kind">refs</span><span class="chip-label">oversized references</span></span>
+            <span class="ctx-chip stale-chip"><span class="chip-kind">src</span><span class="chip-label">stale anchor</span></span>
+          </div>
+          <button class="result-row"><strong>resolver/index.ts:132</strong><span>Preview result row with Explain and Open actions.</span></button>
+          <div class="chat-tool-log">
+            <div class="chat-tool-header"><span>ToolCallLog</span><span class="tool-status">Done</span></div>
+            <div class="chat-tool-body">find_definition: resolver/index.ts L38 / search_related: 12 refs</div>
+          </div>
+          <div class="saved-note"><strong>Saved answer</strong><span>Anchored to resolver/index.ts / resolveModule L38-L41.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="component-card wide">
+      <h4>Inventory Checklist</h4>
+      <div class="component-inventory">
+        ${productComponents.map(([name, desc]) => `<div><strong>${name}</strong><span>${desc}</span></div>`).join("")}
+      </div>
+    </article>
+  `;
 }
 
 document.querySelectorAll(".mode-button").forEach(btn => btn.addEventListener("click", () => setMode(btn.dataset.mode)));

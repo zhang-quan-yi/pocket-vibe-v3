@@ -1,13 +1,5 @@
 import { escapeHTML } from "../../shared/utils/escape-html";
-import type { ToolCallLogEntry } from "../../shared/schema";
-
-type ChatPanelProps = {
-  question: string;
-  answer: string;
-  toolLog: ToolCallLogEntry[];
-  isChatRunning: boolean;
-  canAsk: boolean;
-};
+import type { ChatPanelProps } from "../../shared/ui";
 
 export function renderChatPanel(props: ChatPanelProps): string {
   const { question, answer, toolLog, isChatRunning, canAsk } = props;

@@ -1,7 +1,8 @@
 import { escapeHTML } from "../../../shared/utils/escape-html";
-import type { Note } from "../../../shared/schema";
+import type { SaveNotePanelProps } from "../../../shared/ui";
 
-export function renderCardsTrailPanel(note: Note | null, canSave: boolean): string {
+export function renderCardsTrailPanel(props: SaveNotePanelProps): string {
+  const { note, canSave } = props;
   const savedNoteMarkup = note
     ? `
       <div class="saved-note">

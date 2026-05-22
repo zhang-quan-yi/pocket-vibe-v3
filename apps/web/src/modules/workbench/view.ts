@@ -22,7 +22,7 @@ export function renderAppShell(state: AppState): string {
 
       ${state.error ? `<div class="error-banner">${escapeHTML(state.error)}</div>` : ""}
 
-      ${renderRepoBand(state.activeRepo, Boolean(state.reader))}
+      ${renderRepoBand({ repo: state.activeRepo, hasReader: Boolean(state.reader) })}
 
       <section class="workbench" aria-label="Reader workbench">
         <div class="reader-pane">
@@ -35,7 +35,11 @@ export function renderAppShell(state: AppState): string {
           })}
         </div>
         <aside class="side-pane">
-          ${renderContextPanel(state.contextChips, state.resolvedContext, Boolean(state.selectedRange))}
+          ${renderContextPanel({
+            chips: state.contextChips,
+            resolvedContext: state.resolvedContext,
+            canAddContext: Boolean(state.selectedRange),
+          })}
           ${renderChatPanel({
             question: state.question,
             answer: state.answer,
@@ -43,7 +47,7 @@ export function renderAppShell(state: AppState): string {
             isChatRunning: state.isChatRunning,
             canAsk: Boolean(state.contextChips.length),
           })}
-          ${renderCardsTrailPanel(state.savedNote, Boolean(state.answer && !state.isChatRunning))}
+          ${renderCardsTrailPanel({ note: state.savedNote, canSave: Boolean(state.answer && !state.isChatRunning) })}
         </aside>
       </section>
     </main>

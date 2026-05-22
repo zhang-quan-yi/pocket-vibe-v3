@@ -1,14 +1,7 @@
 import { renderSearchResults } from "../search/view";
 import { escapeHTML } from "../../shared/utils/escape-html";
-import type { CodeLine, ReaderPayload, SearchResult, SourceRange } from "../../shared/schema";
-
-type CodeReaderProps = {
-  reader: ReaderPayload | null;
-  selectedRange: SourceRange | null;
-  highlightedLine: number | null;
-  searchQuery: string;
-  searchResults: SearchResult[];
-};
+import type { CodeLine, SourceRange } from "../../shared/schema";
+import type { CodeReaderProps } from "../../shared/ui";
 
 export function renderCodeReader(props: CodeReaderProps): string {
   const { reader, selectedRange, highlightedLine, searchQuery, searchResults } = props;
@@ -36,7 +29,7 @@ export function renderCodeReader(props: CodeReaderProps): string {
       <input aria-label="Search code" value="${escapeHTML(searchQuery)}" data-role="search-input" />
       <button class="secondary-action" data-action="search">Search</button>
     </div>
-    ${renderSearchResults(searchResults)}
+    ${renderSearchResults({ results: searchResults })}
 
     <div class="code-reader" aria-label="Read-only source code">
       ${reader.lines.map((line) => renderCodeLine(line, selectedRange, highlightedLine)).join("")}

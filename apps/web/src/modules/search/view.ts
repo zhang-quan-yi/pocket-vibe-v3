@@ -1,7 +1,9 @@
 import { escapeHTML } from "../../shared/utils/escape-html";
-import type { SearchResult } from "../../shared/schema";
+import type { SearchResultsProps } from "../../shared/ui";
 
-export function renderSearchResults(results: SearchResult[]): string {
+export function renderSearchResults(props: SearchResultsProps): string {
+  const { results } = props;
+
   if (!results.length) {
     return "";
   }

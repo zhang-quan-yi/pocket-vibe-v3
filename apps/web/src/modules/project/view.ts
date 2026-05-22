@@ -1,7 +1,9 @@
 import { escapeHTML } from "../../shared/utils/escape-html";
-import type { Repo } from "../../shared/schema";
+import type { ProjectSummaryProps } from "../../shared/ui";
 
-export function renderProjectSummary(repo: Repo | null): string {
+export function renderProjectSummary(props: ProjectSummaryProps): string {
+  const { repo } = props;
+
   return `
     <div>
       <h2>Project</h2>

@@ -1,11 +1,8 @@
 import { escapeHTML } from "../../shared/utils/escape-html";
-import type { ContextChip, ResolvedContext } from "../../shared/schema";
+import type { ContextBasketPanelProps } from "../../shared/ui";
 
-export function renderContextPanel(
-  contextChips: ContextChip[],
-  resolvedContext: ResolvedContext | null,
-  canAddContext: boolean,
-): string {
+export function renderContextPanel(props: ContextBasketPanelProps): string {
+  const { chips: contextChips, resolvedContext, canAddContext } = props;
   const chips = contextChips
     .map(
       (chip) => `
