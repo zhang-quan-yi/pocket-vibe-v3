@@ -1,92 +1,178 @@
-// Package reader 负责聚合代码阅读器所需的全部数据，包括文件内容、符号引用、折叠区间和推荐选区。
-// ReaderPayload 是产品核心模型，由后端生成、前端和未来原生端消费，不含 CodeMirror 或 DOM 状态。
-// 后端拥有 ReaderPayload 的生成逻辑，前端只消费结构化 DTO。
 package reader
 
 import (
 	"context"
+	"regexp"
+	"strings"
+	"unicode/utf8"
 
+	filemod "pocket-vibe-v3/services/core/internal/modules/file"
 	"pocket-vibe-v3/services/core/internal/shared/contract"
+	"pocket-vibe-v3/services/core/internal/shared/fixture"
 )
 
-// ReaderService 定义代码阅读器模块对外暴露的能力。
-// 后端拥有 ReaderPayload 的生成逻辑，前端只消费结构化 DTO。
 type ReaderService interface {
-	// GetPayload 根据 projectId 和 filePath 聚合返回 ReaderPayload。
-	// 包含文件行内容、符号引用、推荐选区等平台无关信息。
-	// 当 filePath 为空时，使用仓库的推荐文件。
 	GetPayload(ctx context.Context, projectID string, filePath string) (*contract.ReaderPayload, error)
 }
 
-// MockReaderService 是 ReaderService 的 mock 实现，服务于 walking skeleton 验证阶段。
-// 返回硬编码的 TypeScript 代码内容和符号引用。
-type MockReaderService struct{}
-
-// mockLines 是 walking skeleton 阶段的 mock 源码行数据。
-var mockLines = []string{
-	"import type { ContextChip, SourceRange } from './types';",
-	"",
-	"export function buildContextBasket(selection: SourceRange): ContextChip[] {",
-	"  const baseChip: ContextChip = {",
-	"    id: `selection:${selection.filePath}:${selection.startLine}` ,",
-	"    kind: 'selection',",
-	"    label: `Lines ${selection.startLine}-${selection.endLine}` ,",
-	"    source: selection,",
-	"  };",
-	"",
-	"  return [baseChip, createReaderTrailChip(selection.filePath)];",
-	"}",
-	"",
-	"function createReaderTrailChip(filePath: string): ContextChip {",
-	"  return {",
-	"    id: `trail:${filePath}` ,",
-	"    kind: 'readingTrail',",
-	"    label: 'Current reading trail',",
-	"    source: { filePath, startLine: 1, endLine: 1 },",
-	"  };",
-	"}",
+type FixtureReaderService struct {
+	Files filemod.Service
 }
 
-// mockRepoID 是 mock 仓库的项目 ID。
-const mockRepoID = "mock-pocket-vibe"
+var functionPattern = regexp.MustCompile(`^\s*(?:export\s+)?function\s+([A-Za-z0-9_]+)`)
 
-// mockRecommendedFile 是 mock 仓库的推荐文件路径。
-const mockRecommendedFile = "src/reader/context.ts"
-
-// GetPayload 返回 mock 代码阅读器载荷。
-func (s *MockReaderService) GetPayload(ctx context.Context, projectID string, filePath string) (*contract.ReaderPayload, error) {
-	if filePath == "" {
-		filePath = mockRecommendedFile
+func (s *FixtureReaderService) GetPayload(ctx context.Context, projectID string, filePath string) (*contract.ReaderPayload, error) {
+	if strings.TrimSpace(projectID) == "" {
+		projectID = fixture.DefaultProject().Repo.ID
+	}
+	if strings.TrimSpace(filePath) == "" {
+		filePath = fixture.DefaultProject().Repo.RecommendedFile
 	}
 
-	payload := &contract.ReaderPayload{
-		ProjectID: mockRepoID,
-		FilePath:  filePath,
-		Language:  "typescript",
-		Lines:     toCodeLines(mockLines),
-		Symbols: []contract.SymbolRef{
-			{
-				Name:  "buildContextBasket",
-				Kind:  "function",
-				Range: contract.SourceRange{FilePath: filePath, StartLine: 3, EndLine: 12},
-			},
-			{
-				Name:  "createReaderTrailChip",
-				Kind:  "function",
-				Range: contract.SourceRange{FilePath: filePath, StartLine: 14, EndLine: 21},
-			},
-		},
-		SuggestedSelection: contract.SourceRange{FilePath: filePath, StartLine: 3, EndLine: 12},
+	content, err := s.Files.GetContent(ctx, projectID, filePath)
+	if err != nil {
+		return nil, err
 	}
 
-	return payload, nil
+	symbols := extractSymbols(content.FilePath, content.Lines)
+	suggested := contract.SourceRange{FilePath: content.FilePath, StartLine: 1, EndLine: max(len(content.Lines), 1)}
+	if len(symbols) > 0 {
+		suggested = symbols[0].Range
+	}
+
+	return &contract.ReaderPayload{
+		ProjectID:          content.ProjectID,
+		FilePath:           content.FilePath,
+		Language:           content.Language,
+		Lines:              content.Lines,
+		Symbols:            symbols,
+		SuggestedSelection: suggested,
+	}, nil
 }
 
-// toCodeLines 将字符串行切片转换为带行号的 CodeLine 结构体切片。
-func toCodeLines(lines []string) []contract.CodeLine {
-	result := make([]contract.CodeLine, len(lines))
+func extractSymbols(filePath string, lines []contract.CodeLine) []contract.SymbolRef {
+	symbols := make([]contract.SymbolRef, 0)
 	for i, line := range lines {
-		result[i] = contract.CodeLine{Number: i + 1, Text: line}
+		matches := functionPattern.FindStringSubmatch(line.Text)
+		if len(matches) != 2 {
+			continue
+		}
+		startLine := i + 1
+		endLine := findFunctionEnd(i, lines)
+		symbols = append(symbols, contract.SymbolRef{
+			Name:  matches[1],
+			Kind:  "function",
+			Range: contract.SourceRange{FilePath: filePath, StartLine: startLine, EndLine: endLine},
+		})
 	}
-	return result
+	return symbols
+}
+
+func findFunctionEnd(startIdx int, lines []contract.CodeLine) int {
+	depth := 0
+	seenBrace := false
+	for i := startIdx; i < len(lines); i++ {
+		text := stripBraceNoise(lines[i].Text)
+		depth += strings.Count(text, "{")
+		if strings.Contains(text, "{") {
+			seenBrace = true
+		}
+		depth -= strings.Count(text, "}")
+		if seenBrace && depth <= 0 {
+			return i + 1
+		}
+	}
+	return len(lines)
+}
+
+func stripBraceNoise(line string) string {
+	line = trimLineComment(line)
+	var builder strings.Builder
+	builder.Grow(len(line))
+
+	inSingle := false
+	inDouble := false
+	inTemplate := false
+	escaped := false
+
+	for len(line) > 0 {
+		r, size := utf8.DecodeRuneInString(line)
+		line = line[size:]
+
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch r {
+		case '\\':
+			if inSingle || inDouble || inTemplate {
+				escaped = true
+			}
+		case '\'':
+			if !inDouble && !inTemplate {
+				inSingle = !inSingle
+			}
+		case '"':
+			if !inSingle && !inTemplate {
+				inDouble = !inDouble
+			}
+		case '`':
+			if !inSingle && !inDouble {
+				inTemplate = !inTemplate
+			}
+		default:
+			if !inSingle && !inDouble && !inTemplate {
+				builder.WriteRune(r)
+			}
+		}
+	}
+
+	return builder.String()
+}
+
+func trimLineComment(line string) string {
+	inSingle := false
+	inDouble := false
+	inTemplate := false
+	escaped := false
+
+	for i := 0; i < len(line)-1; i++ {
+		if escaped {
+			escaped = false
+			continue
+		}
+
+		switch line[i] {
+		case '\\':
+			if inSingle || inDouble || inTemplate {
+				escaped = true
+			}
+		case '\'':
+			if !inDouble && !inTemplate {
+				inSingle = !inSingle
+			}
+		case '"':
+			if !inSingle && !inTemplate {
+				inDouble = !inDouble
+			}
+		case '`':
+			if !inSingle && !inDouble {
+				inTemplate = !inTemplate
+			}
+		case '/':
+			if !inSingle && !inDouble && !inTemplate && line[i+1] == '/' {
+				return line[:i]
+			}
+		}
+	}
+
+	return line
+}
+
+func max(a int, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
