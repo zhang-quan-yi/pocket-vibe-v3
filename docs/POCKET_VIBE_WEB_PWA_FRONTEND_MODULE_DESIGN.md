@@ -1,7 +1,7 @@
 # Pocket Vibe Web/PWA 前端模块设计
 
-版本：Frontend Design v0.1  
-日期：2026-05-16  
+版本：Frontend Design v0.2  
+日期：2026-05-23  
 阶段：工程启动前前端设计  
 适用范围：Pocket Vibe Web/PWA MVP 前端；后续 Android / HarmonyOS 原生端复用信息架构、状态模型和核心交互语义。
 
@@ -83,6 +83,32 @@ Search、Definition、References 都先 preview。只有 `Open` / `Jump` 才改�
 
 Safe read / Analysis 可以自动执行；App write 需要确认；Source write 和 Dangerous action 在 MVP 禁止。前端必须把权限状态展示出来，而不是只让后端拦截。
 
+### 3.7 Web 实现基座决策
+
+Web/PWA MVP 采用：
+
+```text
+Vite + React + TypeScript
+Base UI primitives
+Pocket Vibe owned CSS tokens / product components
+```
+
+决策理由：
+
+- 当前前端仍处于 walking skeleton 阶段，React 化成本低，适合把 Reader、Context Basket、Chat、ToolCallLog、Save Answer 等状态组织成清晰组件树。
+- Base UI 是 headless / unstyled React primitive，适合处理 Dialog、Popover、Menu、Tabs、Toast、Select、Field 等复杂交互和可访问性细节。
+- Pocket Vibe 的核心视觉语言已经由 Reader、ContextChip、SourceAnchor、ToolCallLog、SaveAnswerTray 定义，不能被外部通用主题接管。
+- MVP 先恢复并保护完整纵向链路，再逐步抽出通用 UI primitive；不要先建设完整组件库。
+
+暂不作为 MVP 前置依赖：
+
+- Tailwind 全量迁移。
+- shadcn / registry 全量导入。
+- 路由库、状态库、动画库。
+- 大规模设计系统生成器。
+
+这些能力只有在具体切片出现真实复杂度时再引入。
+
 ## 4. 前端总体架构
 
 ```mermaid
@@ -159,6 +185,48 @@ apps/web/src/
 - `modules/*` 之间通过 shared store / events / DTO 通信，避免直接互相拿内部组件状态。
 - `shared/schema` 只放平台无关类型，不引用 React、CodeMirror、DOM。
 - `code-reader` 可以适配 CodeMirror，但不能让 CodeMirror 类型泄漏到 `context-basket`、`knowledge`、`chat`。
+- `shared/ui` 只放通用交互 primitive 和无业务语义的基础组件；`ContextChip`、`CodeLine`、`SourceAnchorBadge` 等产品组件应留在对应模块或 product component 层。
+- Base UI 的组件封装应保持薄层：行为、focus、keyboard 交给 Base UI；样式、状态文案、产品语义由 Pocket Vibe 控制。
+
+### 5.1 样式库与组件来源
+
+样式库策略：
+
+```text
+Base UI primitives
++ Pocket Vibe tokens
++ Pocket Vibe product components
++ selective reference from ecosystem
+```
+
+候选来源评估：
+
+| 来源 | 结论 | 用法 |
+|---|---|---|
+| 自建 PV UI + Base UI | 主路线 | 使用现有 token 和产品组件语言，自主管理样式 |
+| baseui-cn | 可参考 | 参考 Base UI-first shadcn-style registry 的封装方式，选择性复制 |
+| coss ui | 可参考 | 参考现代 SaaS 密度、CSS variables 和组合规则，注意许可边界 |
+| Kumo | 可参考 | 参考工程感、状态感和克制现代化，不直接套 Cloudflare 气质 |
+| ReUI / basecn | 次级参考 | 参考复杂 pattern，不作为主视觉来源 |
+| 原版 shadcn/ui | 工作流参考 | 借鉴 copy-and-own 思路，不照搬默认审美 |
+
+第一阶段推荐建立这些基础组件：
+
+```text
+shared/ui/
+  Button
+  IconButton
+  Field
+  Textarea
+  StatusPill
+  Sheet
+  Dialog
+  Popover
+  Tabs
+  Toast
+```
+
+其中 `Sheet`、`Dialog`、`Popover`、`Tabs`、`Toast` 优先用 Base UI primitive 封装；`ContextChip`、`CodeLine`、`ToolCallLog`、`SaveAnswerTray` 自建并服务读码链路。
 
 ## 6. 模块设计
 
@@ -885,16 +953,25 @@ Screenshots should verify:
 9. VS Code Copilot Chat 的上下文模型是否已经被转译，而不是照搬。
 10. Android native renderer 是否能复用 Reader payload 和 ContextChip。
 
-## 14. 待决问题
+## 14. 已决事项与待决问题
 
-1. 前端框架选择：React、Vue、Svelte 或其他。
-2. Store 方案：Zustand、Redux Toolkit、TanStack Store 或框架内置状态。
-3. Context Basket token estimate 在前端估算还是完全依赖后端。
-4. `#` mention 是否在移动端直接暴露，还是只作为内部模型。
-5. 是否需要桌面 Web 的 keyboard shortcut。
-6. Context chip 是否支持用户自定义命名。
-7. Code Map 节点如何进入 Context Basket。
-8. NoteDocument / DailyReport 是否支持前端离线编辑。
+已决：
+
+1. 前端框架选择：采用 React + TypeScript。
+2. Headless primitive：采用 Base UI。
+3. 样式策略：采用 Pocket Vibe owned CSS tokens / product components，不直接套外部主题。
+4. 现代化方向：Reader 保持安静稳定；工具层、状态反馈和转场更现代、更有动感。
+
+待决：
+
+1. Store 方案：Zustand、Redux Toolkit、TanStack Store 或 React 内置状态。
+2. Context Basket token estimate 在前端估算还是完全依赖后端。
+3. `#` mention 是否在移动端直接暴露，还是只作为内部模型。
+4. 是否需要桌面 Web 的 keyboard shortcut。
+5. Context chip 是否支持用户自定义命名。
+6. Code Map 节点如何进入 Context Basket。
+7. NoteDocument / DailyReport 是否支持前端离线编辑。
+8. 是否需要在 FE Slice 2 之后引入 motion library，还是继续使用 CSS transition / keyframes。
 
 ## 15. 参考资料
 
@@ -903,3 +980,9 @@ Screenshots should verify:
 - GitHub Copilot Chat prompt docs：https://docs.github.com/en/copilot/using-github-copilot/copilot-chat/getting-started-with-prompts-for-copilot-chat
 - GitHub Copilot Chat cheat sheet：https://docs.github.com/en/copilot/reference/cheat-sheet?tool=vscode
 - GitHub Copilot in VS Code features：https://code.visualstudio.com/docs/copilot/copilot-vscode-features
+- Base UI：https://base-ui.com/react/overview/about
+- Base UI styling：https://base-ui.com/react/handbook/styling
+- Pocket Vibe Motion：./POCKET_VIBE_MOTION.md
+- baseui-cn：https://www.baseui-cn.com/
+- coss ui：https://coss.com/ui/docs/get-started
+- Kumo：https://kumo-ui.com/registry

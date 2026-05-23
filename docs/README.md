@@ -8,6 +8,8 @@ Pocket Vibe 是一款移动端 AI 源码阅读器，目标是在手机上完成�
 
 - [MVP PRD](./POCKET_VIBE_MVP_PRD.md)
 - [移动端核心交互 UX 方案](./POCKET_VIBE_MOBILE_UX_SPEC.md)
+- [视觉语言](./POCKET_VIBE_VISUAL_LANGUAGE.md)
+- [Motion 设计](./POCKET_VIBE_MOTION.md)
 - [技术可行性与架构报告](./POCKET_VIBE_TECH_FEASIBILITY_ARCHITECTURE_REPORT.md)
 - [Web/PWA 高层设计与模块设计](./POCKET_VIBE_WEB_PWA_HIGH_LEVEL_AND_MODULE_DESIGN.md)
 - [Web/PWA 前端模块设计](./POCKET_VIBE_WEB_PWA_FRONTEND_MODULE_DESIGN.md)
