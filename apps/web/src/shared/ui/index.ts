@@ -5,6 +5,8 @@ export * from "./IconButton";
 export * from "./Popover";
 export * from "./Sheet";
 export * from "./StatusPill";
+export * from "./SourcePreviewCard";
 export * from "./Tabs";
 export * from "./Textarea";
+export * from "./ToolCallLog";
 export * from "./Toast";

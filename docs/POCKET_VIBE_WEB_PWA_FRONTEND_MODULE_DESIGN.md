@@ -228,6 +228,25 @@ shared/ui/
 
 其中 `Sheet`、`Dialog`、`Popover`、`Tabs`、`Toast` 优先用 Base UI primitive 封装；`ContextChip`、`CodeLine`、`ToolCallLog`、`SaveAnswerTray` 自建并服务读码链路。
 
+### 5.2 移动端参考采纳状态
+
+移动端优秀产品参考只转译成 Pocket Vibe 的读码链路，不直接搬 UI。
+
+当前采纳：
+
+1. 组件工作台只是开发期 surface，用于验证 Base UI 封装、token、motion 和产品基础组件；不是产品首页或正式信息架构。
+2. `ToolCallLog` 采用移动端 task timeline：默认短摘要，状态可检查，失败和取消必须有文字。
+3. Motion 用来表达因果：Search result -> Preview、Definition -> Context chip -> Chat、Save Answer -> snackbar / gutter bookmark。
+4. Chat 或回答中的源码引用可以使用 `SourcePreviewCard`：展示 path、range、snippet、Preview / Jump。
+5. 小屏减少卡片感：优先使用 sheet、inline chip、timeline、source card，避免多层 card 堆叠和重阴影。
+
+暂缓：
+
+1. Context Basket receipt 的完整重构。
+2. Selection toolbar 阅读批注化。
+3. Search 和 Ask 合并为 Quick Bar。
+4. Save Answer 完整产品流重做。
+
 ## 6. 模块设计
 
 ### 6.1 App Shell
@@ -961,6 +980,8 @@ Screenshots should verify:
 2. Headless primitive：采用 Base UI。
 3. 样式策略：采用 Pocket Vibe owned CSS tokens / product components，不直接套外部主题。
 4. 现代化方向：Reader 保持安静稳定；工具层、状态反馈和转场更现代、更有动感。
+5. 组件工作台是开发期工具，不代表产品首页。
+6. 近期可落地产品基础组件：`ToolCallLog` timeline、`SourcePreviewCard`、因果 motion、小屏低卡片密度。
 
 待决：
 

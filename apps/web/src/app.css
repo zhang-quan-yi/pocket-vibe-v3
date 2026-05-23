@@ -37,6 +37,13 @@
   font-weight: 900;
 }
 
+.pv-dev-note {
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .pv-app__status,
 .pv-reader-demo__actions,
 .pv-control-grid {
@@ -156,6 +163,10 @@
   padding: var(--space-4);
 }
 
+.pv-panel--quiet {
+  box-shadow: none;
+}
+
 .pv-panel__head {
   display: flex;
   align-items: start;
@@ -179,11 +190,17 @@
     border-right: 0;
     border-left: 0;
     border-radius: 0;
+    box-shadow: none;
   }
 
   .pv-app__header,
   .pv-workbench {
     grid-template-columns: 1fr;
+  }
+
+  .pv-workbench,
+  .pv-panel-stack {
+    gap: 0;
   }
 
   .pv-app__header,

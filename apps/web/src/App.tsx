@@ -5,9 +5,11 @@ import {
   IconButton,
   Popover,
   Sheet,
+  SourcePreviewCard,
   StatusPill,
   Tabs,
   Textarea,
+  ToolCallLog,
   ToastProvider,
   usePvToast,
 } from "./shared/ui";
@@ -30,6 +32,30 @@ const tabItems = [
   },
 ];
 
+const toolCallItems = [
+  {
+    id: "search",
+    label: "Searched project",
+    target: "context resolver",
+    status: "completed" as const,
+    detail: "Matched 4 files and ranked current reader context first.",
+  },
+  {
+    id: "open",
+    label: "Opened source",
+    target: "src/reader/context.ts",
+    status: "running" as const,
+    detail: "Resolving anchors and checking line ranges before answer generation.",
+  },
+  {
+    id: "candidate",
+    label: "Found candidates",
+    target: "2 source ranges",
+    status: "queued" as const,
+    detail: "Waiting for user-visible context preview before sending.",
+  },
+];
+
 export function App() {
   return (
     <ToastProvider>
@@ -49,9 +75,11 @@ function ComponentWorkbench() {
           <div>
             <p className="eyebrow">React + Base UI foundation</p>
             <h1>Pocket Vibe Components</h1>
+            <p className="pv-dev-note">Development-only component workbench. Not the product home screen.</p>
           </div>
         </div>
         <div className="pv-app__status">
+          <StatusPill tone="neutral">Dev surface</StatusPill>
           <StatusPill tone="ready">Ready</StatusPill>
           <StatusPill tone="context">Context visible</StatusPill>
         </div>
@@ -166,6 +194,42 @@ function ComponentWorkbench() {
               </Button>
             </div>
             <Tabs items={tabItems} />
+          </section>
+
+          <section className="pv-panel pv-panel--quiet">
+            <div className="pv-panel__head">
+              <div>
+                <p className="eyebrow">Product primitives</p>
+                <h2>Tool timeline and source card</h2>
+              </div>
+              <StatusPill tone="context">Mobile patterns</StatusPill>
+            </div>
+            <ToolCallLog title="Agent reading task" items={toolCallItems} />
+            <SourcePreviewCard
+              path="src/reader/context.ts"
+              range="L38-L47"
+              title="resolveContextChip"
+              status="saved"
+              snippet={`return {
+  ...chip,
+  status: chip.pinned ? "pinned" : "ready",
+  sourceRange: source,
+};`}
+              onPreview={() =>
+                addToast({
+                  title: "Preview source",
+                  description: "Preview keeps Reader position stable.",
+                  type: "info",
+                })
+              }
+              onJump={() =>
+                addToast({
+                  title: "Jump queued",
+                  description: "Only explicit Jump changes the Reader position.",
+                  type: "success",
+                })
+              }
+            />
           </section>
         </aside>
       </section>
