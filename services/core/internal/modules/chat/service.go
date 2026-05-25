@@ -39,16 +39,25 @@ func (s *MockChatService) StreamEvents(ctx context.Context, sessionID string, qu
 		if q == "" {
 			q = "Explain this code."
 		}
-		_ = q
 
-		ch <- contract.ChatEvent{Type: contract.ChatEventTool, Payload: contract.ChatToolPayload{SessionID: sessionID, Name: "read_file", Summary: "Reading src/reader/context.ts around the selected range."}}
-		time.Sleep(180 * time.Millisecond)
-		ch <- contract.ChatEvent{Type: contract.ChatEventTool, Payload: contract.ChatToolPayload{SessionID: sessionID, Name: "resolve_context", Summary: "Resolving selected lines plus current reading trail."}}
-		for _, chunk := range mockAnswerChunks {
-			time.Sleep(220 * time.Millisecond)
-			ch <- contract.ChatEvent{Type: contract.ChatEventDelta, Payload: contract.ChatDeltaPayload{Text: chunk}}
+		if !sendChatEvent(ctx, ch, contract.ChatEvent{Type: contract.ChatEventTool, Payload: contract.ChatToolPayload{SessionID: sessionID, Name: "read_file", Summary: "Reading src/reader/context.ts around the selected range for: " + q}}) {
+			return
 		}
-		ch <- contract.ChatEvent{Type: contract.ChatEventDone, Payload: contract.ChatDonePayload{Source: contract.SourceRange{FilePath: fixture.DefaultProject().Repo.RecommendedFile, StartLine: 3, EndLine: 12}}}
+		if !waitForChatDelay(ctx, 180*time.Millisecond) {
+			return
+		}
+		if !sendChatEvent(ctx, ch, contract.ChatEvent{Type: contract.ChatEventTool, Payload: contract.ChatToolPayload{SessionID: sessionID, Name: "resolve_context", Summary: "Resolving selected lines plus current reading trail."}}) {
+			return
+		}
+		for _, chunk := range mockAnswerChunks {
+			if !waitForChatDelay(ctx, 220*time.Millisecond) {
+				return
+			}
+			if !sendChatEvent(ctx, ch, contract.ChatEvent{Type: contract.ChatEventDelta, Payload: contract.ChatDeltaPayload{Text: chunk}}) {
+				return
+			}
+		}
+		sendChatEvent(ctx, ch, contract.ChatEvent{Type: contract.ChatEventDone, Payload: contract.ChatDonePayload{Source: contract.SourceRange{FilePath: fixture.DefaultProject().Repo.RecommendedFile, StartLine: 3, EndLine: 12}}})
 	}()
 	return ch, nil
 }
@@ -59,4 +68,24 @@ func (s *MockChatService) SendMessage(ctx context.Context, sessionID string, req
 		Answer:    "The selected code creates visible context chips, then uses them as the source of truth for the AI request.",
 		ToolCalls: []map[string]string{{"name": "read_file", "status": "completed"}, {"name": "resolve_context", "status": "completed"}},
 	}, nil
+}
+
+func sendChatEvent(ctx context.Context, ch chan<- contract.ChatEvent, event contract.ChatEvent) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	case ch <- event:
+		return true
+	}
+}
+
+func waitForChatDelay(ctx context.Context, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }

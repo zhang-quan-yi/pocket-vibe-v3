@@ -128,17 +128,10 @@ TDD 工作流：
 - 写 TODO 时要具体，并说明属于哪个未来 slice。
 - 不要改写 `docs/archive` 里的归档资料，除非用户明确要求。
 
-## 常用 Agent Prompt
+# 前端组件开发规范
 
-给 Codex：
+docs\guideline\frontend.md
 
-```text
-Use AGENTS.md as the project guide. Implement one small vertical slice, run the relevant checks, and keep the mock walking skeleton intact.
-```
+# 后端开发规范
 
-给 Copilot Chat：
-
-```text
-Read AGENTS.md and the relevant docs under docs/. Work in a TDD style where practical, and do not add real repo import, source editing, terminal, git, or PR features unless explicitly requested.
-```
-
+docs\guideline\backend.md

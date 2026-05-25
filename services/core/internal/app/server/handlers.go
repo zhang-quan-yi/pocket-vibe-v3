@@ -282,7 +282,7 @@ func (h *Handlers) writeServiceError(w http.ResponseWriter, r *http.Request, err
 	case errors.Is(err, serviceerrors.ErrProjectNotFound), errors.Is(err, serviceerrors.ErrFileNotFound), errors.Is(err, serviceerrors.ErrNoteNotFound):
 		writeRequestError(w, r, http.StatusNotFound, contract.ErrNotFound, err.Error())
 	case errors.Is(err, serviceerrors.ErrInvalidFilePath):
-		writeRequestError(w, r, http.StatusBadRequest, contract.ErrBadJSON, err.Error())
+		writeRequestError(w, r, http.StatusBadRequest, contract.ErrBadRequest, err.Error())
 	default:
 		writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
 	}
