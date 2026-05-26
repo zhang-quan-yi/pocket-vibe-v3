@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Pocket Vibe Mock API
-  version: 0.2.0
+  version: 0.3.0
 servers:
   - url: http://localhost:8080
 paths:
@@ -11,15 +11,58 @@ paths:
       responses:
         "200":
           description: Service status
+  /auth/login:
+    post:
+      summary: Login with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "201":
+          description: Login success with session token
+        "401":
+          description: Invalid credentials
+  /auth/logout:
+    post:
+      summary: Logout and destroy session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Logout success
+        "401":
+          description: Not authenticated
+  /auth/me:
+    get:
+      summary: Get current user info
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+        "401":
+          description: Not authenticated
   /mock/repos:
     get:
       summary: List local fixture repos for the walking skeleton
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Mock repo list
   /files/tree:
     get:
       summary: List the local fixture file tree for a project
+      security:
+        - bearerAuth: []
       parameters:
         - name: projectId
           in: query
@@ -154,6 +197,15 @@ paths:
           description: Annotation list
     post:
       summary: Save an annotation
+      security:
+        - bearerAuth: []
       responses:
         "201":
           description: Annotation
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Session token obtained from /auth/login

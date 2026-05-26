@@ -45,6 +45,12 @@ const (
 	ErrAgentPermissionBlocked = "AGENT_PERMISSION_BLOCKED"
 	// ErrStreamUnsupported 表示当前环境不支持 SSE 流式推送。
 	ErrStreamUnsupported = "STREAM_UNSUPPORTED"
+	// ErrAuthRequired 表示请求缺少有效的 session token。
+	ErrAuthRequired = "AUTH_REQUIRED"
+	// ErrAuthInvalid 表示用户名或密码错误。
+	ErrAuthInvalid = "AUTH_INVALID"
+	// ErrSessionExpired 表示 session 已过期。
+	ErrSessionExpired = "SESSION_EXPIRED"
 )
 
 // NewApiError 创建一个结构化错误实例。

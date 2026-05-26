@@ -5,6 +5,29 @@ type Repo struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	RecommendedFile string `json:"recommendedFile"`
+	Source          string `json:"source"` // "fixture" | "github" (future)
+}
+
+type User struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type Session struct {
+	Token     string `json:"token"`
+	UserID    string `json:"userId"`
+	ExpiresAt string `json:"expiresAt"`
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Session Session `json:"session"`
+	User    User    `json:"user"`
 }
 
 type SourceRange struct {

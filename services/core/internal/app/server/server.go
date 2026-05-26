@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	authmod "pocket-vibe-v3/services/core/internal/modules/auth"
 	capabilitymod "pocket-vibe-v3/services/core/internal/modules/capability"
 	chatmod "pocket-vibe-v3/services/core/internal/modules/chat"
 	contextmod "pocket-vibe-v3/services/core/internal/modules/context"
@@ -14,12 +15,14 @@ import (
 )
 
 func New() http.Handler {
+	authService := authmod.NewMemoryAuthService()
 	files := &filemod.LocalFixtureService{}
 	knowledge := knowledgemod.NewMemoryKnowledgeService()
 	reader := &readermmod.FixtureReaderService{Files: files}
 	search := &searchmod.FixtureSearchService{Files: files}
 
 	h := &Handlers{
+		Auth:       authService,
 		Repo:       &repomod.FixtureRepoService{},
 		Files:      files,
 		Reader:     reader,
@@ -30,21 +33,44 @@ func New() http.Handler {
 		Capability: &capabilitymod.StaticService{},
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", h.handleHealth)
-	mux.HandleFunc("GET /mock/repos", h.handleMockRepos)
-	mux.HandleFunc("GET /files/tree", h.handleFilesTree)
-	mux.HandleFunc("GET /files/content", h.handleFileContent)
-	mux.HandleFunc("GET /reader/payload", h.handleReaderPayload)
-	mux.HandleFunc("GET /search", h.handleSearch)
-	mux.HandleFunc("GET /capabilities", h.handleCapabilities)
-	mux.HandleFunc("POST /context/resolve", h.handleContextResolve)
-	mux.HandleFunc("POST /chat/sessions", h.handleChatSessions)
-	mux.HandleFunc("/chat/sessions/", h.handleChatSessionSubroutes)
-	mux.HandleFunc("/notes/", h.handleNoteSubroutes)
-	mux.HandleFunc("/notes", h.handleNotes)
-	mux.HandleFunc("/saved-answers", h.handleSavedAnswers)
-	mux.HandleFunc("/annotations", h.handleAnnotations)
+	// 公开路由（不需要认证）
+	publicMux := http.NewServeMux()
+	publicMux.HandleFunc("GET /health", h.handleHealth)
+	publicMux.HandleFunc("POST /auth/login", h.handleLogin)
 
-	return withCORS(withTraceID(withRequestLog(mux)))
+	// 需认证路由
+	protectedMux := http.NewServeMux()
+	protectedMux.HandleFunc("POST /auth/logout", h.handleLogout)
+	protectedMux.HandleFunc("GET /auth/me", h.handleMe)
+	protectedMux.HandleFunc("GET /mock/repos", h.handleMockRepos)
+	protectedMux.HandleFunc("GET /files/tree", h.handleFilesTree)
+	protectedMux.HandleFunc("GET /files/content", h.handleFileContent)
+	protectedMux.HandleFunc("GET /reader/payload", h.handleReaderPayload)
+	protectedMux.HandleFunc("GET /search", h.handleSearch)
+	protectedMux.HandleFunc("GET /capabilities", h.handleCapabilities)
+	protectedMux.HandleFunc("POST /context/resolve", h.handleContextResolve)
+	protectedMux.HandleFunc("POST /chat/sessions", h.handleChatSessions)
+	protectedMux.HandleFunc("/chat/sessions/", h.handleChatSessionSubroutes)
+	protectedMux.HandleFunc("/notes/", h.handleNoteSubroutes)
+	protectedMux.HandleFunc("/notes", h.handleNotes)
+	protectedMux.HandleFunc("/saved-answers", h.handleSavedAnswers)
+	protectedMux.HandleFunc("/annotations", h.handleAnnotations)
+
+	// 中间件链：CORS -> TraceID -> RequestLog
+	// 认证路由额外包裹 withAuth
+	protectedHandler := withAuth(authService, true)(protectedMux)
+
+	return withCORS(withTraceID(withRequestLog(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if matchRoute(publicMux, r) {
+			publicMux.ServeHTTP(w, r)
+			return
+		}
+		protectedHandler.ServeHTTP(w, r)
+	}))))
+}
+
+// matchRoute 检查请求是否能被 mux 匹配到已注册路由。
+func matchRoute(mux *http.ServeMux, r *http.Request) bool {
+	_, pattern := mux.Handler(r)
+	return pattern != ""
 }

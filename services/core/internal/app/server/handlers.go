@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	authmod "pocket-vibe-v3/services/core/internal/modules/auth"
 	capabilitymod "pocket-vibe-v3/services/core/internal/modules/capability"
 	chatmod "pocket-vibe-v3/services/core/internal/modules/chat"
 	contextmod "pocket-vibe-v3/services/core/internal/modules/context"
@@ -14,11 +15,13 @@ import (
 	readermmod "pocket-vibe-v3/services/core/internal/modules/reader"
 	repomod "pocket-vibe-v3/services/core/internal/modules/repo"
 	searchmod "pocket-vibe-v3/services/core/internal/modules/search"
+	"pocket-vibe-v3/services/core/internal/shared/authctx"
 	"pocket-vibe-v3/services/core/internal/shared/contract"
 	"pocket-vibe-v3/services/core/internal/shared/serviceerrors"
 )
 
 type Handlers struct {
+	Auth       authmod.AuthService
 	Repo       repomod.RepoService
 	Files      filemod.Service
 	Reader     readermmod.ReaderService
@@ -33,6 +36,42 @@ var noteIDPattern = regexp.MustCompile(`^note_[a-z0-9]+$`)
 
 func (h *Handlers) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "mode": "mock"})
+}
+
+func (h *Handlers) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req contract.LoginRequest
+	if err := readJSON(r, &req); err != nil {
+		writeRequestError(w, r, http.StatusBadRequest, contract.ErrBadJSON, err.Error())
+		return
+	}
+	resp, err := h.Auth.Login(r.Context(), req)
+	if err != nil {
+		writeRequestError(w, r, http.StatusUnauthorized, contract.ErrAuthInvalid, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, resp)
+}
+
+func (h *Handlers) handleLogout(w http.ResponseWriter, r *http.Request) {
+	token := extractBearerToken(r)
+	if token == "" {
+		writeRequestError(w, r, http.StatusUnauthorized, contract.ErrAuthRequired, "Missing session token.")
+		return
+	}
+	if err := h.Auth.Logout(r.Context(), token); err != nil {
+		writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *Handlers) handleMe(w http.ResponseWriter, r *http.Request) {
+	user, ok := authctx.RequireUser(r.Context())
+	if !ok {
+		writeRequestError(w, r, http.StatusUnauthorized, contract.ErrAuthRequired, "Not authenticated.")
+		return
+	}
+	writeJSON(w, http.StatusOK, user)
 }
 
 func (h *Handlers) handleMockRepos(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +229,7 @@ func (h *Handlers) handleNotes(w http.ResponseWriter, r *http.Request) {
 		}
 		note, err := h.Knowledge.CreateNoteDocument(r.Context(), req)
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusCreated, note)
@@ -198,7 +237,7 @@ func (h *Handlers) handleNotes(w http.ResponseWriter, r *http.Request) {
 		projectID := r.URL.Query().Get("projectId")
 		notes, err := h.Knowledge.ListNoteDocuments(r.Context(), projectID)
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"notes": notes})
@@ -235,14 +274,14 @@ func (h *Handlers) handleSavedAnswers(w http.ResponseWriter, r *http.Request) {
 		}
 		answer, err := h.Knowledge.CreateSavedAnswer(r.Context(), req)
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusCreated, answer)
 	case http.MethodGet:
 		answers, err := h.Knowledge.ListSavedAnswers(r.Context(), r.URL.Query().Get("projectId"))
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"savedAnswers": answers})
@@ -261,14 +300,14 @@ func (h *Handlers) handleAnnotations(w http.ResponseWriter, r *http.Request) {
 		}
 		annotation, err := h.Knowledge.CreateAnnotation(r.Context(), req)
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusCreated, annotation)
 	case http.MethodGet:
 		annotations, err := h.Knowledge.ListAnnotations(r.Context(), r.URL.Query().Get("projectId"))
 		if err != nil {
-			writeRequestError(w, r, http.StatusInternalServerError, contract.ErrModelProviderError, err.Error())
+			h.writeServiceError(w, r, err)
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"annotations": annotations})
@@ -279,6 +318,10 @@ func (h *Handlers) handleAnnotations(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
+	case errors.Is(err, serviceerrors.ErrUnauthorized):
+		writeRequestError(w, r, http.StatusUnauthorized, contract.ErrAuthRequired, err.Error())
+	case errors.Is(err, serviceerrors.ErrSessionExpired):
+		writeRequestError(w, r, http.StatusUnauthorized, contract.ErrSessionExpired, err.Error())
 	case errors.Is(err, serviceerrors.ErrProjectNotFound), errors.Is(err, serviceerrors.ErrFileNotFound), errors.Is(err, serviceerrors.ErrNoteNotFound):
 		writeRequestError(w, r, http.StatusNotFound, contract.ErrNotFound, err.Error())
 	case errors.Is(err, serviceerrors.ErrInvalidFilePath):
